@@ -5,13 +5,13 @@ const STEPS = [
     number: '1',
     icon: '📋',
     title: 'Tell Us About Your Dog',
-    desc: 'Answer a quick questionnaire about your dog's size, temperament, and the event vision.',
+    desc: "Answer a quick questionnaire about your dog's size, temperament, and the event vision.",
   },
   {
     number: '2',
     icon: '👔',
     title: 'Custom Garment Made',
-    desc: 'Our tailors craft a bespoke tuxedo or gown fitted to your dog's exact measurements.',
+    desc: "Our tailors craft a bespoke tuxedo or gown fitted to your dog's exact measurements.",
   },
   {
     number: '3',
@@ -34,7 +34,7 @@ export default function HowItWorks() {
         <div className={styles.sectionLabel}>The Process</div>
         <h2 className={styles.sectionTitle}>From stressed to seamless in 4 steps</h2>
         <p className={styles.sectionSub}>
-          We've managed over 500 dog wedding appearances without a single ceremony disruption.
+          We&apos;ve managed over 500 dog wedding appearances without a single ceremony disruption.
         </p>
         <div className={styles.steps}>
           {STEPS.map((step) => (
