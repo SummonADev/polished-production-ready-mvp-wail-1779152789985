@@ -32,6 +32,7 @@ export default function OnboardingPage() {
   const [email, setEmail] = useState('');
   const [dogName, setDogName] = useState('');
   const [dogBreed, setDogBreed] = useState('');
+  const [dogAge, setDogAge] = useState('');
   const [eventDate, setEventDate] = useState('');
   const [goalStatement, setGoalStatement] = useState('');
   const [painPoints, setPainPoints] = useState<string[]>([]);
@@ -55,7 +56,7 @@ export default function OnboardingPage() {
     track('signup_complete');
 
     const userData: OnboardingData = {
-      name, email, role, dogName, dogBreed, eventDate,
+      name, email, role, dogName, dogBreed, dogAge, eventDate,
       painPoints, goalStatement, surveyAnswers,
       completedAt: new Date().toISOString(),
     };
@@ -63,7 +64,7 @@ export default function OnboardingPage() {
 
     const lead: Lead = {
       id: `lead-${Date.now()}`,
-      name, email, role, dogName, dogBreed, eventDate,
+      name, email, role, dogName, dogBreed, dogAge, eventDate,
       painPoints, goalStatement, surveyAnswers,
       bookingPlan: null,
       createdAt: new Date().toISOString(),
@@ -141,6 +142,24 @@ export default function OnboardingPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Breed *</label>
                 <input className={styles.input} type="text" placeholder="e.g. Golden Retriever" value={dogBreed} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDogBreed(e.target.value)} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Age</label>
+                <div className={styles.ageSelectWrap}>
+                  <select
+                    className={styles.select}
+                    value={dogAge}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setDogAge(e.target.value)}
+                  >
+                    <option value="">Select age range</option>
+                    <option value="under1">Under 1 year (puppy)</option>
+                    <option value="1-3">1–3 years</option>
+                    <option value="4-7">4–7 years</option>
+                    <option value="8-11">8–11 years</option>
+                    <option value="12+">12+ years (senior)</option>
+                  </select>
+                  <span className={styles.selectArrow}>▾</span>
+                </div>
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Describe your goal in one sentence</label>

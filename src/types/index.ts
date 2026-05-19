@@ -6,6 +6,7 @@ export type OnboardingData = {
   role: UserRole;
   dogName: string;
   dogBreed: string;
+  dogAge: string;
   eventDate: string;
   painPoints: string[];
   goalStatement: string;
@@ -35,6 +36,7 @@ export type BookingPlan = {
   packageId: PackageId;
   dogName: string;
   dogBreed: string;
+  dogAge: string;
   dogSize: string;
   eventDate: string;
   eventLocation: string;
@@ -52,6 +54,7 @@ export type Lead = {
   role: UserRole;
   dogName: string;
   dogBreed: string;
+  dogAge: string;
   eventDate: string;
   painPoints: string[];
   goalStatement: string;
