@@ -1,21 +1,17 @@
-import type { Lead } from '@/types';
-
-const LEADS_KEY = 'bark_and_bow_leads';
-
-export function saveleads(leads: Lead[]): void {
+export function loadFromStorage<T>(key: string, fallback: T): T {
   try {
-    localStorage.setItem(LEADS_KEY, JSON.stringify(leads));
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    return JSON.parse(raw) as T;
   } catch {
-    // ignore
+    return fallback;
   }
 }
 
-export function loadLeads(): Lead[] {
+export function saveToStorage<T>(key: string, value: T): void {
   try {
-    const raw = localStorage.getItem(LEADS_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as Lead[];
+    localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    return [];
+    // ignore
   }
 }
