@@ -1,22 +1,21 @@
 import type { Lead } from '@/types';
 
-const LEADS_KEY = 'bark_bow_leads';
+const LEADS_KEY = 'bark_and_bow_leads';
 
-export function getLeads(): Lead[] {
+export function saveleads(leads: Lead[]): void {
   try {
-    const raw = localStorage.getItem(LEADS_KEY);
-    return raw ? (JSON.parse(raw) as Lead[]) : [];
+    localStorage.setItem(LEADS_KEY, JSON.stringify(leads));
   } catch {
-    return [];
+    // ignore
   }
 }
 
-export function saveLead(lead: Lead): void {
+export function loadLeads(): Lead[] {
   try {
-    const existing = getLeads();
-    const updated = [lead, ...existing.filter((l) => l.email !== lead.email)];
-    localStorage.setItem(LEADS_KEY, JSON.stringify(updated));
+    const raw = localStorage.getItem(LEADS_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as Lead[];
   } catch {
-    // ignore
+    return [];
   }
 }

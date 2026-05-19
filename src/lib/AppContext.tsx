@@ -1,31 +1,32 @@
-import { createContext, useContext, useReducer, useEffect } from 'react';
-import type { ReactNode } from 'react';
+import { createContext, useContext, useReducer, type ReactNode } from 'react';
 import type { AppState, OnboardingData, BookingPlan, Lead, AnalyticsEvent } from '@/types';
-
-type Action =
-  | { type: 'SET_USER'; payload: OnboardingData }
-  | { type: 'SET_BOOKING_PLAN'; payload: BookingPlan }
-  | { type: 'ADD_LEAD'; payload: Lead }
-  | { type: 'TRACK'; payload: AnalyticsEvent }
-  | { type: 'HYDRATE'; payload: AppState };
+import { saveleads, loadLeads } from '@/lib/storage';
 
 const initialState: AppState = {
+  leads: loadLeads(),
+  onboardingData: null,
   user: null,
   bookingPlan: null,
-  leads: [],
   analytics: [],
 };
 
+type Action =
+  | { type: 'SET_USER'; payload: Lead }
+  | { type: 'SET_BOOKING_PLAN'; payload: BookingPlan }
+  | { type: 'ADD_LEAD'; payload: Lead }
+  | { type: 'TRACK'; payload: AnalyticsEvent };
+
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
-    case 'HYDRATE':
-      return action.payload;
     case 'SET_USER':
       return { ...state, user: action.payload };
     case 'SET_BOOKING_PLAN':
       return { ...state, bookingPlan: action.payload };
-    case 'ADD_LEAD':
-      return { ...state, leads: [action.payload, ...state.leads] };
+    case 'ADD_LEAD': {
+      const leads = [...state.leads, action.payload];
+      saveleads(leads);
+      return { ...state, leads };
+    }
     case 'TRACK':
       return { ...state, analytics: [...state.analytics, action.payload] };
     default:
@@ -33,49 +34,48 @@ function reducer(state: AppState, action: Action): AppState {
   }
 }
 
-type AppContextType = {
+type AppContextValue = {
   state: AppState;
-  setUser: (data: OnboardingData) => void;
-  setBookingPlan: (plan: BookingPlan) => void;
-  addLead: (lead: Lead) => void;
-  track: (event: string, data?: Record<string, string>) => void;
+  dispatch: React.Dispatch<Action>;
+  track: (event: string, properties?: Record<string, unknown>) => void;
+  submitOnboarding: (data: OnboardingData) => Lead;
 };
 
-const AppContext = createContext<AppContextType | null>(null);
-
-const STORAGE_KEY = 'bark_bow_state';
+const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as AppState;
-        dispatch({ type: 'HYDRATE', payload: parsed });
-      }
-    } catch {
-      // ignore parse errors
-    }
-  }, []);
+  const track = (event: string, properties?: Record<string, unknown>) => {
+    dispatch({
+      type: 'TRACK',
+      payload: { event, properties, timestamp: new Date().toISOString() },
+    });
+  };
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      // ignore storage errors
-    }
-  }, [state]);
-
-  const setUser = (data: OnboardingData) => dispatch({ type: 'SET_USER', payload: data });
-  const setBookingPlan = (plan: BookingPlan) => dispatch({ type: 'SET_BOOKING_PLAN', payload: plan });
-  const addLead = (lead: Lead) => dispatch({ type: 'ADD_LEAD', payload: lead });
-  const track = (event: string, data?: Record<string, string>) =>
-    dispatch({ type: 'TRACK', payload: { event, timestamp: new Date().toISOString(), data } });
+  const submitOnboarding = (data: OnboardingData): Lead => {
+    const lead: Lead = {
+      id: `lead_${Date.now()}`,
+      name: data.name,
+      email: data.email,
+      role: data.role,
+      dogName: data.dogName,
+      dogBreed: data.dogBreed,
+      dogAge: data.dogAge,
+      eventDate: data.eventDate,
+      goalStatement: data.goalStatement,
+      packageId: 'signature',
+      status: 'inquiry',
+      createdAt: new Date().toISOString(),
+    };
+    dispatch({ type: 'ADD_LEAD', payload: lead });
+    dispatch({ type: 'SET_USER', payload: lead });
+    track('onboarding_complete', { email: data.email });
+    return lead;
+  };
 
   return (
-    <AppContext.Provider value={{ state, setUser, setBookingPlan, addLead, track }}>
+    <AppContext.Provider value={{ state, dispatch, track, submitOnboarding }}>
       {children}
     </AppContext.Provider>
   );
