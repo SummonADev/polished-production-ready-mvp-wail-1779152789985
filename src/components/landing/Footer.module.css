@@ -22,6 +22,11 @@
   font-weight: 700;
   color: white;
   margin-bottom: var(--space-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: block;
 }
 
 .logoAccent {
@@ -33,6 +38,23 @@
   color: rgba(255, 255, 255, 0.5);
   line-height: 1.6;
   max-width: 240px;
+  margin-bottom: var(--space-4);
+}
+
+.socialRow {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.socialIcon {
+  font-size: 1.2rem;
+  opacity: 0.6;
+  transition: opacity var(--transition-fast);
+  text-decoration: none;
+}
+
+.socialIcon:hover {
+  opacity: 1;
 }
 
 .links {
@@ -63,6 +85,7 @@
   border: none;
   cursor: pointer;
   text-align: left;
+  padding: 0;
 }
 
 .link:hover {

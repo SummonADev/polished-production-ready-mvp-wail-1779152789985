@@ -1,0 +1,72 @@
+.figure {
+  position: relative;
+  margin: 0;
+}
+
+.imgWrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  border: 3px solid var(--accent, var(--color-accent));
+}
+
+.img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--transition-slow);
+}
+
+.imgWrapper:hover .img {
+  transform: scale(1.04);
+}
+
+.badge {
+  position: absolute;
+  bottom: var(--space-3);
+  left: var(--space-3);
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-full);
+  padding: 4px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  letter-spacing: 0.04em;
+  box-shadow: var(--shadow-sm);
+}
+
+.caption {
+  margin-top: var(--space-3);
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+  font-style: italic;
+}
+
+/* Sizes */
+.sm .imgWrapper,
+.sm {
+  width: 120px;
+  height: 120px;
+}
+
+.md .imgWrapper,
+.md {
+  width: 260px;
+  height: 260px;
+}
+
+.lg .imgWrapper,
+.lg {
+  width: 380px;
+  height: 380px;
+}
+
+.xl .imgWrapper,
+.xl {
+  width: 100%;
+  height: 480px;
+}

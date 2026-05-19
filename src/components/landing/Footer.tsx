@@ -1,28 +1,34 @@
+import { useNavigate } from 'react-router-dom';
 import styles from './Footer.module.css';
 
 export default function Footer() {
+  const navigate = useNavigate();
   return (
     <footer className={styles.footer}>
       <div className="container">
         <div className={styles.top}>
           <div className={styles.brand}>
-            <div className={styles.logo}>🐾 Bark <span className={styles.logoAccent}>&</span> Bow</div>
+            <button className={styles.logo} onClick={() => navigate('/')}>🐾 Bark <span className={styles.logoAccent}>&</span> Bow</button>
             <div className={styles.tagline}>The complete best dog experience. Custom formalwear + professional event-day handling.</div>
+            <div className={styles.socialRow}>
+              <a href="#" className={styles.socialIcon} aria-label="Instagram">📸</a>
+              <a href="#" className={styles.socialIcon} aria-label="TikTok">🎵</a>
+              <a href="#" className={styles.socialIcon} aria-label="Pinterest">📌</a>
+            </div>
           </div>
           <div className={styles.links}>
             <div className={styles.linkGroup}>
               <div className={styles.linkGroupTitle}>Product</div>
-              <button className={styles.link}>How It Works</button>
-              <button className={styles.link}>Pricing</button>
-              <button className={styles.link}>Testimonials</button>
-              <button className={styles.link}>FAQ</button>
+              <button className={styles.link} onClick={() => navigate('/how-it-works')}>How It Works</button>
+              <button className={styles.link} onClick={() => navigate('/product')}>Packages</button>
+              <button className={styles.link} onClick={() => navigate('/testimonials')}>Testimonials</button>
             </div>
             <div className={styles.linkGroup}>
               <div className={styles.linkGroupTitle}>Company</div>
-              <button className={styles.link}>About Us</button>
-              <button className={styles.link}>Careers</button>
-              <button className={styles.link}>Press</button>
-              <button className={styles.link}>Contact</button>
+              <button className={styles.link} onClick={() => navigate('/about')}>About Us</button>
+              <button className={styles.link} onClick={() => navigate('/careers')}>Careers</button>
+              <button className={styles.link} onClick={() => navigate('/press')}>Press</button>
+              <button className={styles.link} onClick={() => navigate('/contact')}>Contact</button>
             </div>
           </div>
         </div>
