@@ -1,77 +1,69 @@
-export type UserRole = 'couple' | 'planner' | 'other';
+export type DogSize = 'small' | 'medium' | 'large' | 'extra-large';
 
-export type OnboardingData = {
-  name: string;
-  email: string;
-  role: UserRole;
-  dogName: string;
-  dogBreed: string;
-  dogAge: string;
-  eventDate: string;
-  painPoints: string[];
-  goalStatement: string;
-  surveyAnswers: Record<string, string>;
-  completedAt: string;
-};
+export type PackageId = 'essential' | 'signature' | 'luxury';
 
-export type PackageId = 'essential' | 'signature' | 'elite';
-
-export type Package = {
-  id: PackageId;
-  name: string;
-  price: number;
-  tagline: string;
-  features: string[];
-  highlighted: boolean;
-};
-
-export type WorkflowStep = {
-  id: string;
-  title: string;
-  description: string;
-  status: 'pending' | 'active' | 'complete';
-};
-
-export type BookingPlan = {
-  packageId: PackageId;
-  dogName: string;
-  dogBreed: string;
-  dogAge: string;
-  dogSize: string;
-  eventDate: string;
-  eventLocation: string;
-  specialRequirements: string;
-  style: string;
-  colorScheme: string;
-  selectedAddons: string[];
-  generatedAt: string;
-};
+export type LeadStatus = 'new' | 'contacted' | 'booked' | 'completed';
 
 export type Lead = {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
+  phone?: string;
   dogName: string;
   dogBreed: string;
-  dogAge: string;
+  dogSize: DogSize;
+  packageId: PackageId;
   eventDate: string;
-  painPoints: string[];
-  goalStatement: string;
-  surveyAnswers: Record<string, string>;
-  bookingPlan: BookingPlan | null;
+  status: LeadStatus;
   createdAt: string;
+  notes?: string;
+};
+
+export type OnboardingData = {
+  ownerName: string;
+  email: string;
+  phone?: string;
+  dogName: string;
+  dogBreed: string;
+  dogSize: DogSize;
+  packageId: PackageId;
+  eventDate: string;
+  notes?: string;
+};
+
+export type Package = {
+  id: PackageId;
+  name: string;
+  tagline: string;
+  price: number;
+  features: string[];
+  highlighted?: boolean;
+};
+
+export type Testimonial = {
+  id: string;
+  name: string;
+  location: string;
+  dogName: string;
+  dogBreed: string;
+  packageId: PackageId;
+  rating: number;
+  quote: string;
+  emoji: string;
 };
 
 export type AppState = {
-  user: OnboardingData | null;
-  bookingPlan: BookingPlan | null;
   leads: Lead[];
-  analytics: AnalyticsEvent[];
+  onboarding: Partial<OnboardingData>;
 };
 
-export type AnalyticsEvent = {
-  event: string;
-  timestamp: string;
-  data?: Record<string, string>;
+export type AppAction =
+  | { type: 'ADD_LEAD'; payload: Lead }
+  | { type: 'UPDATE_LEAD'; payload: Lead }
+  | { type: 'SET_ONBOARDING'; payload: Partial<OnboardingData> }
+  | { type: 'RESET_ONBOARDING' };
+
+export type TrackingEvent = {
+  name: string;
+  properties?: Record<string, unknown>;
 };
