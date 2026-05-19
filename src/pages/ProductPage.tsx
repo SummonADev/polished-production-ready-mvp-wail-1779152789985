@@ -1,135 +1,173 @@
 import { useNavigate } from 'react-router-dom';
-import PageLayout from '@/components/shared/PageLayout';
-import DogImage from '@/components/shared/DogImage';
-import { PACKAGES } from '@/lib/packages';
-import styles from './ProductPage.module.css';
+import Navbar from '@/components/landing/Navbar';
+import Footer from '@/components/landing/Footer';
+import { useApp } from '@/lib/AppContext';
+import styles from './SubPage.module.css';
 
-const ADDON_FEATURES = [
-  { icon: '✂️', title: 'Custom Tailoring', desc: 'Every garment hand-crafted to your dog\'s exact measurements. No generic sizing.' },
-  { icon: '🧴', title: 'Spa Grooming', desc: 'Organic bath, nail trim, blow-dry, and a pre-event outfit dry-run.' },
-  { icon: '🤝', title: 'Pro Pet Handler', desc: 'Certified, background-checked handlers with event & canine behavior training.' },
-  { icon: '📸', title: 'Photo Session', desc: '50+ professionally edited images in 5 business days.' },
-  { icon: '🚗', title: 'Transportation', desc: 'Door-to-venue-to-home. Climate-controlled, pet-safe vehicles.' },
-  { icon: '🏨', title: 'Overnight Spa Stay', desc: 'Calm your dog the night before — luxury boarding, wellness check included.' },
-  { icon: '🎖️', title: 'Engraved Keepsake', desc: 'Custom collar with your wedding date. A memory that lasts beyond the day.' },
-  { icon: '📜', title: 'Liability Certificate', desc: '$1M event-day coverage. Peace of mind for you and your venue.' },
+const packages = [
+  {
+    name: 'The Gentleman',
+    price: '$1,200',
+    emoji: '🎩',
+    tag: null,
+    color: '#F4F4F7',
+    desc: 'The essential Bark & Bow experience. Everything your dog needs to show up polished and supported for a key role in your ceremony.',
+    features: [
+      { icon: '🧵', text: 'Custom-fitted tuxedo or formal dress' },
+      { icon: '✂️', text: 'Pre-event grooming session at your home' },
+      { icon: '👤', text: 'Certified handler for 4 hours' },
+      { icon: '📸', text: '30-minute professional photo session' },
+      { icon: '🏠', text: 'Safe return transport home' },
+      { icon: '📋', text: 'Post-event behavior report' },
+    ],
+    ideal: 'Single dog, supporting role (guest appearance, ring bearer)',
+  },
+  {
+    name: 'The Grand Marshal',
+    price: '$2,400',
+    emoji: '🌟',
+    tag: 'Most Popular',
+    color: '#EEF0FF',
+    desc: 'Our flagship package. Full-day coverage with a dedicated coordinator, premium accessories, and priority gallery delivery.',
+    features: [
+      { icon: '🧵', text: 'Everything in The Gentleman' },
+      { icon: '⏰', text: 'Full-day handler coverage (8 hours)' },
+      { icon: '💎', text: 'Bespoke accessories: bow tie, pocket square, collar' },
+      { icon: '📸', text: '1-hour professional photo session' },
+      { icon: '🖼️', text: 'Priority gallery edit within 24 hours' },
+      { icon: '🎯', text: 'Dedicated event coordinator on-site' },
+      { icon: '🤝', text: 'Pre-event handler meet-and-greet' },
+    ],
+    ideal: 'Single dog, primary role (processional, ceremony, reception)',
+  },
+  {
+    name: 'The Royal Pack',
+    price: '$3,800',
+    emoji: '👑',
+    tag: 'Best Value',
+    color: '#FFF7ED',
+    desc: 'For multiple dogs, extra-special occasions, or clients who simply want the very best. No detail left to chance.',
+    features: [
+      { icon: '🌟', text: 'Everything in The Grand Marshal' },
+      { icon: '🐕', text: 'Up to 3 dogs covered' },
+      { icon: '👥', text: 'Multiple handlers assigned (1:1 ratio)' },
+      { icon: '🎭', text: 'Rehearsal walk-through the day before' },
+      { icon: '🏆', text: 'Custom engraved keepsake collar' },
+      { icon: '⏰', text: 'Full-day coverage (12 hours)' },
+      { icon: '📞', text: 'Priority post-event concierge follow-up' },
+    ],
+    ideal: 'Multiple dogs, destination weddings, celebrity/VIP events',
+  },
 ];
 
-const GALLERY_ITEMS = [
-  { variant: 'golden' as const, label: 'Winston — Golden Retriever', event: 'Napa Valley, Sept 2024' },
-  { variant: 'frenchie' as const, label: 'Biscuit — French Bulldog', event: 'NYC Rooftop, Oct 2024' },
-  { variant: 'collie' as const, label: 'Luna — Border Collie', event: 'Chicago Ballroom, Nov 2024' },
-  { variant: 'corgi' as const, label: 'Archie — Corgi', event: 'Malibu Beach, Aug 2024' },
-  { variant: 'poodle' as const, label: 'Coco — Toy Poodle', event: 'The Plaza, NYC, July 2024' },
-  { variant: 'husky' as const, label: 'Thor — Husky', event: 'Aspen Estate, Dec 2024' },
+const addOns = [
+  { name: 'Extra Handler Hour', price: '$85', desc: 'Extend your handler coverage in hourly increments.' },
+  { name: 'Second Dog', price: '+$600', desc: 'Add a second dog to any package.' },
+  { name: 'Rehearsal Visit', price: '$200', desc: 'Handler attends your rehearsal dinner for a dry run.' },
+  { name: 'Luxury Grooming Upgrade', price: '+$150', desc: 'Spa treatment: aromatherapy, teeth brushing, blueberry facial.' },
+  { name: 'Extended Photo Session', price: '+$250', desc: 'Add an extra 30 minutes and 25 additional edited photos.' },
+  { name: 'Keepsake Collar', price: '$180', desc: 'Hand-engraved sterling silver tag with your wedding date.' },
 ];
 
 export default function ProductPage() {
   const navigate = useNavigate();
+  const { track } = useApp();
+  const handleCTA = () => { track('landing_page_cta_click'); navigate('/onboarding'); };
+
   return (
-    <PageLayout>
-      {/* Hero */}
-      <section className={styles.hero}>
-        <div className="container">
-          <div className={styles.heroPill}>Product Overview</div>
-          <h1 className={styles.heroTitle}>The Full Bark & Bow Experience</h1>
-          <p className={styles.heroSub}>
-            A tuxedo is 10% of the problem. We solve the other 90% — grooming, handling, transport, photography, and everything in between.
-          </p>
-          <div className={styles.heroStats}>
-            <div className={styles.stat}><span className={styles.statNum}>500+</span><span className={styles.statLabel}>Events Served</span></div>
-            <div className={styles.statDivider} />
-            <div className={styles.stat}><span className={styles.statNum}>98%</span><span className={styles.statLabel}>Client Satisfaction</span></div>
-            <div className={styles.statDivider} />
-            <div className={styles.stat}><span className={styles.statNum}>All Breeds</span><span className={styles.statLabel}>Welcome</span></div>
-            <div className={styles.statDivider} />
-            <div className={styles.stat}><span className={styles.statNum}>5 Cities</span><span className={styles.statLabel}>& Growing</span></div>
+    <div>
+      <Navbar onCTA={handleCTA} />
+      <main>
+        <section className={styles.pageHero}>
+          <div className="container-narrow">
+            <span className={styles.eyebrow}>Our Packages</span>
+            <h1 className={styles.pageTitle}>Every Dog. Every Detail.</h1>
+            <p className={styles.pageSub}>Three thoughtfully designed packages that cover everything from custom formalwear to full-day professional handling. No guesswork, no logistics nightmares.</p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Feature grid */}
-      <section className={styles.featuresSection}>
-        <div className="container">
-          <h2 className={styles.sectionTitle}>Everything Included</h2>
-          <p className={styles.sectionSub}>Every package is built around a core set of premium services. Higher tiers add more time, coverage, and luxury extras.</p>
-          <div className={styles.featuresGrid}>
-            {ADDON_FEATURES.map((f) => (
-              <div key={f.title} className={styles.featureCard}>
-                <div className={styles.featureIcon}>{f.icon}</div>
-                <h3 className={styles.featureTitle}>{f.title}</h3>
-                <p className={styles.featureDesc}>{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Gallery */}
-      <section className={styles.gallerySection}>
-        <div className="container">
-          <h2 className={styles.sectionTitle}>Dogs in Tuxedos</h2>
-          <p className={styles.sectionSub}>Real Bark & Bow clients. Real events. Undeniably adorable.</p>
-          <div className={styles.galleryGrid}>
-            {GALLERY_ITEMS.map((item) => (
-              <div key={item.variant} className={styles.galleryCard}>
-                <DogImage variant={item.variant} size="xl" />
-                <div className={styles.galleryMeta}>
-                  <div className={styles.galleryLabel}>{item.label}</div>
-                  <div className={styles.galleryEvent}>{item.event}</div>
+        {/* Packages */}
+        <section className={styles.section}>
+          <div className="container">
+            <div className={styles.productGrid}>
+              {packages.map(pkg => (
+                <div key={pkg.name} className={`${styles.productCard} ${pkg.tag === 'Most Popular' ? styles.productCardFeatured : ''}`} style={{ '--card-bg': pkg.color } as React.CSSProperties}>
+                  {pkg.tag && <div className={styles.productTag}>{pkg.tag}</div>}
+                  <div className={styles.productCardHeader}>
+                    <span className={styles.productEmoji}>{pkg.emoji}</span>
+                    <div>
+                      <h3 className={styles.productName}>{pkg.name}</h3>
+                      <span className={styles.productPrice}>{pkg.price}</span>
+                    </div>
+                  </div>
+                  <p className={styles.productDesc}>{pkg.desc}</p>
+                  <ul className={styles.productFeatures}>
+                    {pkg.features.map(f => (
+                      <li key={f.text} className={styles.productFeature}>
+                        <span>{f.icon}</span><span>{f.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className={styles.productIdeal}>
+                    <strong>Ideal for:</strong> {pkg.ideal}
+                  </div>
+                  <button className={`${styles.productBtn} ${pkg.tag === 'Most Popular' ? styles.productBtnFeatured : ''}`} onClick={handleCTA}>
+                    Book {pkg.name}
+                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Packages */}
-      <section className={styles.packagesSection}>
-        <div className="container">
-          <h2 className={styles.sectionTitle}>Choose Your Package</h2>
-          <p className={styles.sectionSub}>All packages include a custom-fitted garment. Higher tiers unlock more services, time, and luxury touches.</p>
-          <div className={styles.packagesGrid}>
-            {PACKAGES.map((pkg) => (
-              <div key={pkg.id} className={`${styles.packageCard} ${pkg.highlighted ? styles.highlighted : ''}`}>
-                {pkg.highlighted && <div className={styles.popularBadge}>Most Popular</div>}
-                <h3 className={styles.pkgName}>{pkg.name}</h3>
-                <div className={styles.pkgPrice}>${pkg.price.toLocaleString()}</div>
-                <p className={styles.pkgTagline}>{pkg.tagline}</p>
-                <ul className={styles.pkgFeatures}>
-                  {pkg.features.map((f) => (
-                    <li key={f} className={styles.pkgFeature}>
-                      <span className={styles.checkIcon}>✓</span> {f}
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  className={`${styles.pkgBtn} ${pkg.highlighted ? styles.pkgBtnPrimary : ''}`}
-                  onClick={() => navigate('/onboarding')}
-                >
-                  Get Started
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className={styles.ctaSection}>
-        <div className="container">
-          <div className={styles.ctaBox}>
-            <div className={styles.ctaDogs}>
-              <DogImage variant="dachshund" size="md" />
-            </div>
-            <div className={styles.ctaContent}>
-              <h2 className={styles.ctaTitle}>Your dog deserves a grand entrance.</h2>
-              <p className={styles.ctaSub}>Join 500+ couples who trusted Bark & Bow with their most important four-legged guest.</p>
-              <button className={styles.ctaBtn} onClick={() => navigate('/onboarding')}>Start Your Booking →</button>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
-    </PageLayout>
+        </section>
+
+        {/* Add-ons */}
+        <section className={`${styles.section} ${styles.sectionAlt}`}>
+          <div className="container">
+            <h2 className={styles.sectionTitle}>Add-On Services</h2>
+            <p className={styles.sectionSub}>Customize any package with premium extras.</p>
+            <div className={styles.addOnGrid}>
+              {addOns.map(a => (
+                <div key={a.name} className={styles.addOnCard}>
+                  <div className={styles.addOnTop}>
+                    <span className={styles.addOnName}>{a.name}</span>
+                    <span className={styles.addOnPrice}>{a.price}</span>
+                  </div>
+                  <p className={styles.addOnDesc}>{a.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Guarantee */}
+        <section className={styles.section}>
+          <div className="container-narrow">
+            <div className={styles.guaranteeBox}>
+              <span style={{ fontSize: '2.5rem' }}>🛡️</span>
+              <h3 className={styles.guaranteeTitle}>The Bark & Bow Guarantee</h3>
+              <p className={styles.guaranteeText}>
+                If your dog isn't comfortable or can't participate on the event day, we'll refund 100% of your handler fee. 
+                No questions asked. Your dog's wellbeing always comes first.
+              </p>
+              <div className={styles.guaranteeBadges}>
+                <span className={styles.guaranteeBadge}>✓ $2M Liability Coverage</span>
+                <span className={styles.guaranteeBadge}>✓ Pet First-Aid Certified</span>
+                <span className={styles.guaranteeBadge}>✓ 100% Satisfaction Promise</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className={styles.ctaSection}>
+          <div className="container-narrow" style={{ textAlign: 'center' }}>
+            <h2 className={styles.ctaTitle}>Not sure which package is right?</h2>
+            <p className={styles.ctaSub}>Answer a few quick questions and we'll recommend the perfect experience for your dog.</p>
+            <button className={styles.ctaBtn} onClick={handleCTA}>Get a Personalized Recommendation</button>
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </div>
   );
 }

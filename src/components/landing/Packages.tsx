@@ -1,40 +1,91 @@
-import { PACKAGES } from '@/lib/packages';
 import styles from './Packages.module.css';
 
-type PackagesProps = {
-  onCTA: () => void;
-};
+const packages = [
+  {
+    name: 'The Gentleman',
+    price: '$1,200',
+    period: 'per event',
+    emoji: '🎩',
+    tag: null,
+    desc: 'Perfect for a single dog with a supporting role.',
+    features: [
+      'Custom-fitted tuxedo or dress',
+      'Pre-event grooming session',
+      'Professional handler (4 hours)',
+      '30-min photo session',
+      'Safe return home',
+    ],
+  },
+  {
+    name: 'The Grand Marshal',
+    price: '$2,400',
+    period: 'per event',
+    emoji: '🌟',
+    tag: 'Most Popular',
+    desc: 'Our flagship full-service experience.',
+    features: [
+      'Everything in The Gentleman',
+      'Handler for full event (8 hours)',
+      'Bespoke accessories & bow tie',
+      '1-hour professional photo session',
+      'Wedding gallery priority edit',
+      'Dedicated event coordinator',
+    ],
+  },
+  {
+    name: 'The Royal Pack',
+    price: '$3,800',
+    period: 'per event',
+    emoji: '👑',
+    tag: null,
+    desc: 'For multiple dogs or extra-special occasions.',
+    features: [
+      'Everything in The Grand Marshal',
+      'Up to 3 dogs',
+      'Multiple handlers assigned',
+      'Rehearsal walk-through included',
+      'Custom engraved keepsake collar',
+      'Full-day coverage (12 hours)',
+    ],
+  },
+];
+
+type PackagesProps = { onCTA: () => void };
 
 export default function Packages({ onCTA }: PackagesProps) {
   return (
     <section id="pricing" className={styles.section}>
       <div className="container">
-        <div className={styles.sectionLabel}>Packages</div>
-        <h2 className={styles.sectionTitle}>Simple, transparent pricing</h2>
-        <p className={styles.sectionSub}>Every package includes the garment and the human support.</p>
+        <div className={styles.header}>
+          <span className={styles.eyebrow}>Pricing</span>
+          <h2 className={styles.title}>Choose Your Package</h2>
+          <p className={styles.sub}>All-inclusive event-day experiences. No hidden fees.</p>
+        </div>
         <div className={styles.grid}>
-          {PACKAGES.map((pkg) => (
-            <div key={pkg.id} className={`${styles.card} ${pkg.highlighted ? styles.cardHighlighted : ''}`}>
-              {pkg.highlighted && <div className={styles.popularBadge}>Most Popular</div>}
-              <div className={styles.packageName}>{pkg.name}</div>
-              <div className={styles.tagline}>{pkg.tagline}</div>
+          {packages.map(pkg => (
+            <div key={pkg.name} className={`${styles.card} ${pkg.tag ? styles.featured : ''}`}>
+              {pkg.tag && <div className={styles.featuredBadge}>{pkg.tag}</div>}
+              <div className={styles.cardTop}>
+                <span className={styles.emoji}>{pkg.emoji}</span>
+                <h3 className={styles.pkgName}>{pkg.name}</h3>
+                <p className={styles.pkgDesc}>{pkg.desc}</p>
+              </div>
               <div className={styles.price}>
-                <span className={styles.priceAmount}>${pkg.price.toLocaleString()}</span>
-                <span className={styles.pricePeriod}>one-time</span>
+                <span className={styles.priceNum}>{pkg.price}</span>
+                <span className={styles.pricePer}>{pkg.period}</span>
               </div>
-              <div className={styles.features}>
-                {pkg.features.map((f) => (
-                  <div key={f} className={styles.feature}>
-                    <span className={styles.featureCheck}>✓</span>
-                    <span>{f}</span>
-                  </div>
+              <ul className={styles.features}>
+                {pkg.features.map(f => (
+                  <li key={f} className={styles.feature}>
+                    <span className={styles.check}>✓</span>{f}
+                  </li>
                 ))}
-              </div>
+              </ul>
               <button
-                className={`${styles.btn} ${pkg.highlighted ? styles.btnPrimary : styles.btnOutline}`}
+                className={`${styles.btn} ${pkg.tag ? styles.btnFeatured : ''}`}
                 onClick={onCTA}
               >
-                Get Started
+                Book This Package
               </button>
             </div>
           ))}

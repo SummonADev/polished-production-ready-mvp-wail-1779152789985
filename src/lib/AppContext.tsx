@@ -1,81 +1,118 @@
-import { createContext, useContext, useReducer, type ReactNode } from 'react';
-import type { AppState, OnboardingData, BookingPlan, Lead, AnalyticsEvent } from '@/types';
-import { saveleads, loadLeads } from '@/lib/storage';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-const initialState: AppState = {
-  leads: loadLeads(),
-  onboardingData: null,
-  user: null,
-  bookingPlan: null,
-  analytics: [],
+export type UserProfile = {
+  name: string;
+  email: string;
+  role: string;
+  dogName: string;
+  dogBreed: string;
+  dogAge: string;
+  eventDate: string;
+  painPoint: string;
+  goal: string;
 };
 
-type Action =
-  | { type: 'SET_USER'; payload: Lead }
-  | { type: 'SET_BOOKING_PLAN'; payload: BookingPlan }
-  | { type: 'ADD_LEAD'; payload: Lead }
-  | { type: 'TRACK'; payload: AnalyticsEvent };
+export type Lead = {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+  source: string;
+};
 
-function reducer(state: AppState, action: Action): AppState {
-  switch (action.type) {
-    case 'SET_USER':
-      return { ...state, user: action.payload };
-    case 'SET_BOOKING_PLAN':
-      return { ...state, bookingPlan: action.payload };
-    case 'ADD_LEAD': {
-      const leads = [...state.leads, action.payload];
-      saveleads(leads);
-      return { ...state, leads };
-    }
-    case 'TRACK':
-      return { ...state, analytics: [...state.analytics, action.payload] };
-    default:
-      return state;
-  }
+export type WorkflowOutput = {
+  id: string;
+  type: string;
+  content: string;
+  createdAt: string;
+};
+
+type AppState = {
+  user: UserProfile | null;
+  leads: Lead[];
+  outputs: WorkflowOutput[];
+  analyticsEvents: { event: string; ts: string }[];
+  onboardingComplete: boolean;
+};
+
+type AppContextType = AppState & {
+  setUser: (u: UserProfile) => void;
+  addLead: (lead: Omit<Lead, 'id' | 'createdAt'>) => void;
+  addOutput: (output: Omit<WorkflowOutput, 'id' | 'createdAt'>) => void;
+  track: (event: string) => void;
+  completeOnboarding: () => void;
+  clearUser: () => void;
+};
+
+const AppContext = createContext<AppContextType | null>(null);
+
+function loadState(): AppState {
+  try {
+    const raw = localStorage.getItem('barkbow_state');
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return {
+    user: null,
+    leads: [],
+    outputs: [],
+    analyticsEvents: [],
+    onboardingComplete: false,
+  };
 }
 
-type AppContextValue = {
-  state: AppState;
-  dispatch: React.Dispatch<Action>;
-  track: (event: string, properties?: Record<string, unknown>) => void;
-  submitOnboarding: (data: OnboardingData) => Lead;
-};
-
-const AppContext = createContext<AppContextValue | null>(null);
+function saveState(state: AppState) {
+  try {
+    localStorage.setItem('barkbow_state', JSON.stringify(state));
+  } catch {}
+}
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, setState] = useState<AppState>(loadState);
 
-  const track = (event: string, properties?: Record<string, unknown>) => {
-    dispatch({
-      type: 'TRACK',
-      payload: { event, properties, timestamp: new Date().toISOString() },
-    });
-  };
+  useEffect(() => {
+    saveState(state);
+  }, [state]);
 
-  const submitOnboarding = (data: OnboardingData): Lead => {
-    const lead: Lead = {
-      id: `lead_${Date.now()}`,
-      name: data.name,
-      email: data.email,
-      role: data.role,
-      dogName: data.dogName,
-      dogBreed: data.dogBreed,
-      dogAge: data.dogAge,
-      eventDate: data.eventDate,
-      goalStatement: data.goalStatement,
-      packageId: 'signature',
-      status: 'inquiry',
-      createdAt: new Date().toISOString(),
-    };
-    dispatch({ type: 'ADD_LEAD', payload: lead });
-    dispatch({ type: 'SET_USER', payload: lead });
-    track('onboarding_complete', { email: data.email });
-    return lead;
-  };
+  const setUser = (u: UserProfile) =>
+    setState(s => ({ ...s, user: u }));
+
+  const addLead = (lead: Omit<Lead, 'id' | 'createdAt'>) =>
+    setState(s => ({
+      ...s,
+      leads: [
+        ...s.leads,
+        { ...lead, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
+      ],
+    }));
+
+  const addOutput = (output: Omit<WorkflowOutput, 'id' | 'createdAt'>) =>
+    setState(s => ({
+      ...s,
+      outputs: [
+        ...s.outputs,
+        { ...output, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
+      ],
+    }));
+
+  const track = (event: string) =>
+    setState(s => ({
+      ...s,
+      analyticsEvents: [
+        ...s.analyticsEvents,
+        { event, ts: new Date().toISOString() },
+      ],
+    }));
+
+  const completeOnboarding = () =>
+    setState(s => ({ ...s, onboardingComplete: true }));
+
+  const clearUser = () =>
+    setState(s => ({ ...s, user: null, onboardingComplete: false }));
 
   return (
-    <AppContext.Provider value={{ state, dispatch, track, submitOnboarding }}>
+    <AppContext.Provider
+      value={{ ...state, setUser, addLead, addOutput, track, completeOnboarding, clearUser }}
+    >
       {children}
     </AppContext.Provider>
   );

@@ -18,7 +18,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div>
+    <div style={{ minHeight: '100vh' }}>
       <Navbar onCTA={handleCTA} />
       <Hero onCTA={handleCTA} />
       <HowItWorks />
