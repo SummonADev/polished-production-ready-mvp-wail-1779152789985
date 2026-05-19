@@ -1,124 +1,85 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useReducer, ReactNode } from 'react';
+import { loadFromStorage, saveToStorage } from '@/lib/storage';
+import type { AppState, Lead, BookingSubmission, AnalyticsEvent } from '@/types';
 
-export type UserProfile = {
-  name: string;
-  email: string;
-  role: string;
-  dogName: string;
-  dogBreed: string;
-  dogAge: string;
-  eventDate: string;
-  painPoint: string;
-  goal: string;
-};
-
-export type Lead = {
-  id: string;
-  email: string;
-  name: string;
-  createdAt: string;
-  source: string;
-};
-
-export type WorkflowOutput = {
-  id: string;
-  type: string;
-  content: string;
-  createdAt: string;
-};
-
-type AppState = {
-  user: UserProfile | null;
-  leads: Lead[];
-  outputs: WorkflowOutput[];
-  analyticsEvents: { event: string; ts: string }[];
-  onboardingComplete: boolean;
-};
-
-type AppContextType = AppState & {
-  setUser: (u: UserProfile) => void;
+export type AppContextType = {
+  state: AppState;
   addLead: (lead: Omit<Lead, 'id' | 'createdAt'>) => void;
-  addOutput: (output: Omit<WorkflowOutput, 'id' | 'createdAt'>) => void;
-  track: (event: string) => void;
-  completeOnboarding: () => void;
-  clearUser: () => void;
+  submitOnboarding: (submission: Omit<BookingSubmission, 'id' | 'createdAt'>) => void;
+  track: (event: string, data?: Record<string, unknown>) => void;
+};
+
+type Action =
+  | { type: 'ADD_LEAD'; payload: Lead }
+  | { type: 'ADD_BOOKING'; payload: BookingSubmission }
+  | { type: 'ADD_EVENT'; payload: AnalyticsEvent };
+
+function reducer(state: AppState, action: Action): AppState {
+  switch (action.type) {
+    case 'ADD_LEAD': {
+      const next = { ...state, leads: [...state.leads, action.payload] };
+      saveToStorage('app_state', next);
+      return next;
+    }
+    case 'ADD_BOOKING': {
+      const next = { ...state, bookings: [...state.bookings, action.payload] };
+      saveToStorage('app_state', next);
+      return next;
+    }
+    case 'ADD_EVENT': {
+      const next = { ...state, events: [...state.events, action.payload] };
+      saveToStorage('app_state', next);
+      return next;
+    }
+    default:
+      return state;
+  }
+}
+
+const defaultState: AppState = {
+  leads: [],
+  bookings: [],
+  events: [],
 };
 
 const AppContext = createContext<AppContextType | null>(null);
 
-function loadState(): AppState {
-  try {
-    const raw = localStorage.getItem('barkbow_state');
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return {
-    user: null,
-    leads: [],
-    outputs: [],
-    analyticsEvents: [],
-    onboardingComplete: false,
-  };
-}
-
-function saveState(state: AppState) {
-  try {
-    localStorage.setItem('barkbow_state', JSON.stringify(state));
-  } catch {}
-}
-
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AppState>(loadState);
+  const [state, dispatch] = useReducer(
+    reducer,
+    defaultState,
+    (init) => ({ ...init, ...loadFromStorage<Partial<AppState>>('app_state') })
+  );
 
-  useEffect(() => {
-    saveState(state);
-  }, [state]);
+  const addLead = (lead: Omit<Lead, 'id' | 'createdAt'>) => {
+    dispatch({
+      type: 'ADD_LEAD',
+      payload: { ...lead, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
+    });
+  };
 
-  const setUser = (u: UserProfile) =>
-    setState(s => ({ ...s, user: u }));
+  const submitOnboarding = (submission: Omit<BookingSubmission, 'id' | 'createdAt'>) => {
+    dispatch({
+      type: 'ADD_BOOKING',
+      payload: { ...submission, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
+    });
+  };
 
-  const addLead = (lead: Omit<Lead, 'id' | 'createdAt'>) =>
-    setState(s => ({
-      ...s,
-      leads: [
-        ...s.leads,
-        { ...lead, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
-      ],
-    }));
-
-  const addOutput = (output: Omit<WorkflowOutput, 'id' | 'createdAt'>) =>
-    setState(s => ({
-      ...s,
-      outputs: [
-        ...s.outputs,
-        { ...output, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
-      ],
-    }));
-
-  const track = (event: string) =>
-    setState(s => ({
-      ...s,
-      analyticsEvents: [
-        ...s.analyticsEvents,
-        { event, ts: new Date().toISOString() },
-      ],
-    }));
-
-  const completeOnboarding = () =>
-    setState(s => ({ ...s, onboardingComplete: true }));
-
-  const clearUser = () =>
-    setState(s => ({ ...s, user: null, onboardingComplete: false }));
+  const track = (event: string, data?: Record<string, unknown>) => {
+    dispatch({
+      type: 'ADD_EVENT',
+      payload: { event, data, timestamp: new Date().toISOString() },
+    });
+  };
 
   return (
-    <AppContext.Provider
-      value={{ ...state, setUser, addLead, addOutput, track, completeOnboarding, clearUser }}
-    >
+    <AppContext.Provider value={{ state, addLead, submitOnboarding, track }}>
       {children}
     </AppContext.Provider>
   );
 }
 
-export function useApp() {
+export function useApp(): AppContextType {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error('useApp must be used within AppProvider');
   return ctx;

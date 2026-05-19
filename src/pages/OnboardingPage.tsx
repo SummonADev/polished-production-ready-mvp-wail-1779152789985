@@ -1,197 +1,167 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/lib/AppContext';
-import type { OnboardingData, UserRole, Lead } from '@/types';
+import PageLayout from '@/components/shared/PageLayout';
 import styles from './OnboardingPage.module.css';
+import { PACKAGES } from '@/lib/packages';
 
-const ROLES: { value: UserRole; label: string }[] = [
-  { value: 'bride', label: '👰 Bride' },
-  { value: 'groom', label: '🤵 Groom' },
-  { value: 'planner', label: '📋 Wedding Planner' },
-  { value: 'other', label: '🎉 Other' },
-];
+type FormData = {
+  ownerName: string;
+  ownerEmail: string;
+  dogName: string;
+  dogBreed: string;
+  dogSize: string;
+  eventDate: string;
+  eventLocation: string;
+  packageId: string;
+  notes: string;
+};
+
+const INITIAL: FormData = {
+  ownerName: '',
+  ownerEmail: '',
+  dogName: '',
+  dogBreed: '',
+  dogSize: '',
+  eventDate: '',
+  eventLocation: '',
+  packageId: '',
+  notes: '',
+};
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const { submitOnboarding, track } = useApp();
-
   const [step, setStep] = useState(1);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState<UserRole>('bride');
-  const [dogName, setDogName] = useState('');
-  const [dogBreed, setDogBreed] = useState('');
-  const [dogAge, setDogAge] = useState('');
-  const [eventDate, setEventDate] = useState('');
-  const [goalStatement, setGoalStatement] = useState('');
+  const [form, setForm] = useState<FormData>(INITIAL);
+  const [loading, setLoading] = useState(false);
 
-  const handleStep1 = (e: React.FormEvent) => {
-    e.preventDefault();
-    track('onboarding_step1');
-    setStep(2);
-  };
+  const set = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    setForm(f => ({ ...f, [field]: e.target.value }));
 
-  const handleStep2 = (e: React.FormEvent) => {
-    e.preventDefault();
-    track('onboarding_step2');
-    setStep(3);
-  };
+  const next = () => setStep(s => s + 1);
+  const back = () => setStep(s => s - 1);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const data: OnboardingData = {
-      name,
-      email,
-      role,
-      dogName,
-      dogBreed,
-      dogAge,
-      eventDate,
-      goalStatement,
-    };
-    submitOnboarding(data);
-    navigate('/dashboard');
+    setLoading(true);
+    setTimeout(() => {
+      submitOnboarding(form);
+      track('onboarding_complete', { packageId: form.packageId });
+      setLoading(false);
+      navigate('/dashboard');
+    }, 800);
   };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.container}>
-        <div className={styles.progress}>
-          {[1, 2, 3].map((s) => (
-            <div key={s} className={`${styles.progressStep} ${step >= s ? styles.progressStepActive : ''}`}>
-              <div className={styles.progressDot}>{step > s ? '✓' : s}</div>
-              <span className={styles.progressLabel}>
-                {s === 1 ? 'About You' : s === 2 ? 'Your Dog' : 'Event Details'}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {step === 1 && (
-          <form className={styles.form} onSubmit={handleStep1}>
-            <h1 className={styles.title}>Let&apos;s get started</h1>
-            <p className={styles.sub}>Tell us a bit about yourself.</p>
-
-            <label className={styles.label}>Your Name
-              <input
-                className={styles.input}
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Jane Smith"
-                required
-              />
-            </label>
-
-            <label className={styles.label}>Email Address
-              <input
-                className={styles.input}
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="jane@example.com"
-                required
-              />
-            </label>
-
-            <div className={styles.label}>Your Role
-              <div className={styles.roleGrid}>
-                {ROLES.map((r) => (
-                  <button
-                    key={r.value}
-                    type="button"
-                    className={`${styles.roleBtn} ${role === r.value ? styles.roleBtnActive : ''}`}
-                    onClick={() => setRole(r.value)}
-                  >
-                    {r.label}
-                  </button>
-                ))}
+    <PageLayout>
+      <div className={styles.page}>
+        <div className="container-narrow">
+          <div className={styles.progress}>
+            {[1, 2, 3].map(n => (
+              <div key={n} className={`${styles.progressStep} ${step >= n ? styles.progressActive : ''}`}>
+                <div className={styles.progressDot}>{step > n ? '✓' : n}</div>
+                <span className={styles.progressLabel}>
+                  {n === 1 ? 'Your Info' : n === 2 ? 'Your Dog' : 'Package'}
+                </span>
               </div>
-            </div>
+            ))}
+          </div>
 
-            <button className={styles.nextBtn} type="submit">Next →</button>
-          </form>
-        )}
-
-        {step === 2 && (
-          <form className={styles.form} onSubmit={handleStep2}>
-            <h1 className={styles.title}>About your dog</h1>
-            <p className={styles.sub}>We&apos;ll use this to tailor the perfect outfit and plan.</p>
-
-            <label className={styles.label}>Dog&apos;s Name
-              <input
-                className={styles.input}
-                type="text"
-                value={dogName}
-                onChange={(e) => setDogName(e.target.value)}
-                placeholder="e.g. Winston"
-                required
-              />
-            </label>
-
-            <label className={styles.label}>Breed
-              <input
-                className={styles.input}
-                type="text"
-                value={dogBreed}
-                onChange={(e) => setDogBreed(e.target.value)}
-                placeholder="e.g. Golden Retriever"
-                required
-              />
-            </label>
-
-            <label className={styles.label}>Age (years)
-              <input
-                className={styles.input}
-                type="text"
-                value={dogAge}
-                onChange={(e) => setDogAge(e.target.value)}
-                placeholder="e.g. 3"
-                required
-              />
-            </label>
-
-            <div className={styles.btnRow}>
-              <button type="button" className={styles.backBtn} onClick={() => setStep(1)}>← Back</button>
-              <button className={styles.nextBtn} type="submit">Next →</button>
-            </div>
-          </form>
-        )}
-
-        {step === 3 && (
           <form className={styles.form} onSubmit={handleSubmit}>
-            <h1 className={styles.title}>Event details</h1>
-            <p className={styles.sub}>Almost done! Tell us about the big day.</p>
+            {step === 1 && (
+              <div className={styles.stepContent}>
+                <h2 className={styles.stepTitle}>Tell Us About Yourself</h2>
+                <div className={styles.field}>
+                  <label className={styles.label}>Your Name</label>
+                  <input className={styles.input} value={form.ownerName} onChange={set('ownerName')} placeholder="Jane Smith" required />
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label}>Email Address</label>
+                  <input className={styles.input} type="email" value={form.ownerEmail} onChange={set('ownerEmail')} placeholder="jane@example.com" required />
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label}>Event Date</label>
+                  <input className={styles.input} type="date" value={form.eventDate} onChange={set('eventDate')} required />
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label}>Event Location (City, State)</label>
+                  <input className={styles.input} value={form.eventLocation} onChange={set('eventLocation')} placeholder="New York, NY" required />
+                </div>
+                <div className={styles.actions}>
+                  <div />
+                  <button type="button" className={styles.nextBtn} onClick={next}>Next →</button>
+                </div>
+              </div>
+            )}
 
-            <label className={styles.label}>Wedding Date
-              <input
-                className={styles.input}
-                type="date"
-                value={eventDate}
-                onChange={(e) => setEventDate(e.target.value)}
-                required
-              />
-            </label>
+            {step === 2 && (
+              <div className={styles.stepContent}>
+                <h2 className={styles.stepTitle}>Tell Us About Your Dog</h2>
+                <div className={styles.field}>
+                  <label className={styles.label}>Dog's Name</label>
+                  <input className={styles.input} value={form.dogName} onChange={set('dogName')} placeholder="Max" required />
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label}>Breed</label>
+                  <input className={styles.input} value={form.dogBreed} onChange={set('dogBreed')} placeholder="Golden Retriever" required />
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label}>Size</label>
+                  <select className={styles.input} value={form.dogSize} onChange={set('dogSize')} required>
+                    <option value="">Select size…</option>
+                    <option value="small">Small (under 20 lbs)</option>
+                    <option value="medium">Medium (20–50 lbs)</option>
+                    <option value="large">Large (50–90 lbs)</option>
+                    <option value="xlarge">Extra Large (90+ lbs)</option>
+                  </select>
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label}>Additional Notes</label>
+                  <textarea className={styles.input} value={form.notes} onChange={set('notes')} placeholder="Any special needs, temperament info, etc." rows={3} />
+                </div>
+                <div className={styles.actions}>
+                  <button type="button" className={styles.backBtn} onClick={back}>← Back</button>
+                  <button type="button" className={styles.nextBtn} onClick={next}>Next →</button>
+                </div>
+              </div>
+            )}
 
-            <label className={styles.label}>What&apos;s your goal for your dog on the day? (optional)
-              <textarea
-                className={styles.textarea}
-                value={goalStatement}
-                onChange={(e) => setGoalStatement(e.target.value)}
-                placeholder="e.g. I want Winston to walk down the aisle with me and sit calmly during the vows."
-                rows={4}
-              />
-            </label>
-
-            <div className={styles.btnRow}>
-              <button type="button" className={styles.backBtn} onClick={() => setStep(2)}>← Back</button>
-              <button className={styles.nextBtn} type="submit">Submit 🎉</button>
-            </div>
+            {step === 3 && (
+              <div className={styles.stepContent}>
+                <h2 className={styles.stepTitle}>Choose Your Package</h2>
+                <div className={styles.packages}>
+                  {PACKAGES.map(pkg => (
+                    <label key={pkg.id} className={`${styles.pkgCard} ${form.packageId === pkg.id ? styles.pkgSelected : ''}`}>
+                      <input
+                        type="radio"
+                        name="packageId"
+                        value={pkg.id}
+                        checked={form.packageId === pkg.id}
+                        onChange={set('packageId')}
+                        className={styles.radioHidden}
+                        required
+                      />
+                      <div className={styles.pkgEmoji}>{pkg.emoji}</div>
+                      <div>
+                        <p className={styles.pkgName}>{pkg.name}</p>
+                        <p className={styles.pkgPrice}>{pkg.price}</p>
+                        <p className={styles.pkgDesc}>{pkg.desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <div className={styles.actions}>
+                  <button type="button" className={styles.backBtn} onClick={back}>← Back</button>
+                  <button type="submit" className={styles.nextBtn} disabled={loading}>
+                    {loading ? 'Booking…' : 'Confirm Booking 🎉'}
+                  </button>
+                </div>
+              </div>
+            )}
           </form>
-        )}
+        </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }
-
-export type { Lead };
