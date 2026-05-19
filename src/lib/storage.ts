@@ -1,10 +1,10 @@
-export function loadFromStorage<T>(key: string, fallback: T): T {
+export function loadFromStorage<T>(key: string, fallback?: T): T {
   try {
     const raw = localStorage.getItem(key);
-    if (raw === null) return fallback;
+    if (!raw) return fallback as T;
     return JSON.parse(raw) as T;
   } catch {
-    return fallback;
+    return fallback as T;
   }
 }
 

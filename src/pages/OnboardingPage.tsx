@@ -1,165 +1,225 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/lib/AppContext';
+import { PACKAGES } from '@/lib/packages';
 import PageLayout from '@/components/shared/PageLayout';
 import styles from './OnboardingPage.module.css';
-import { PACKAGES } from '@/lib/packages';
 
-type FormData = {
-  ownerName: string;
-  ownerEmail: string;
-  dogName: string;
-  dogBreed: string;
-  dogSize: string;
-  eventDate: string;
-  eventLocation: string;
-  packageId: string;
-  notes: string;
-};
-
-const INITIAL: FormData = {
-  ownerName: '',
-  ownerEmail: '',
-  dogName: '',
-  dogBreed: '',
-  dogSize: '',
-  eventDate: '',
-  eventLocation: '',
-  packageId: '',
-  notes: '',
-};
+type Step = 'owner' | 'dog' | 'package' | 'confirm';
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
-  const { submitOnboarding, track } = useApp();
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState<FormData>(INITIAL);
-  const [loading, setLoading] = useState(false);
+  const { addLead, addBooking, track } = useApp();
+  const [step, setStep] = useState<Step>('owner');
+  const [ownerName, setOwnerName] = useState('');
+  const [email, setEmail] = useState('');
+  const [dogName, setDogName] = useState('');
+  const [breed, setBreed] = useState('');
+  const [selectedPackage, setSelectedPackage] = useState(PACKAGES[1].id);
+  const [eventDate, setEventDate] = useState('');
+  const [submitted, setSubmitted] = useState(false);
 
-  const set = (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-    setForm(f => ({ ...f, [field]: e.target.value }));
-
-  const next = () => setStep(s => s + 1);
-  const back = () => setStep(s => s - 1);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleOwnerNext = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      submitOnboarding(form);
-      track('onboarding_complete', { packageId: form.packageId });
-      setLoading(false);
-      navigate('/dashboard');
-    }, 800);
+    track('onboarding_owner_step');
+    setStep('dog');
   };
+
+  const handleDogNext = (e: React.FormEvent) => {
+    e.preventDefault();
+    track('onboarding_dog_step');
+    setStep('package');
+  };
+
+  const handlePackageNext = (e: React.FormEvent) => {
+    e.preventDefault();
+    track('onboarding_package_step');
+    setStep('confirm');
+  };
+
+  const handleConfirm = (e: React.FormEvent) => {
+    e.preventDefault();
+    addLead({ email, name: ownerName, source: 'onboarding' });
+    addBooking({
+      ownerName,
+      email,
+      dogName,
+      breed,
+      packageId: selectedPackage,
+      eventDate,
+    });
+    track('booking_completed');
+    setSubmitted(true);
+  };
+
+  if (submitted) {
+    return (
+      <PageLayout>
+        <div className={styles.successPage}>
+          <div className={styles.successCard}>
+            <div className={styles.successEmoji}>🎉</div>
+            <h1 className={styles.successTitle}>You're Officially Booked!</h1>
+            <p className={styles.successSub}>
+              Thank you, {ownerName}! We've received your booking for {dogName}. 
+              Our team will reach out within 24 hours to confirm details.
+            </p>
+            <button className={styles.successBtn} onClick={() => navigate('/dashboard')}>
+              View Your Dashboard
+            </button>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  const steps: Step[] = ['owner', 'dog', 'package', 'confirm'];
+  const stepIndex = steps.indexOf(step);
 
   return (
     <PageLayout>
       <div className={styles.page}>
-        <div className="container-narrow">
-          <div className={styles.progress}>
-            {[1, 2, 3].map(n => (
-              <div key={n} className={`${styles.progressStep} ${step >= n ? styles.progressActive : ''}`}>
-                <div className={styles.progressDot}>{step > n ? '✓' : n}</div>
+        <div className={styles.container}>
+          <div className={styles.header}>
+            <h1 className={styles.title}>Book Your Dog's Experience</h1>
+            <p className={styles.sub}>Tell us about you and your pup.</p>
+          </div>
+
+          <div className={styles.progressBar}>
+            {steps.map((s, i) => (
+              <div
+                key={s}
+                className={`${styles.progressStep} ${
+                  i < stepIndex ? styles.progressDone : i === stepIndex ? styles.progressActive : ''
+                }`}
+              >
+                <div className={styles.progressDot}>{i < stepIndex ? '✓' : i + 1}</div>
                 <span className={styles.progressLabel}>
-                  {n === 1 ? 'Your Info' : n === 2 ? 'Your Dog' : 'Package'}
+                  {s === 'owner' ? 'You' : s === 'dog' ? 'Your Dog' : s === 'package' ? 'Package' : 'Confirm'}
                 </span>
               </div>
             ))}
           </div>
 
-          <form className={styles.form} onSubmit={handleSubmit}>
-            {step === 1 && (
-              <div className={styles.stepContent}>
-                <h2 className={styles.stepTitle}>Tell Us About Yourself</h2>
+          <div className={styles.card}>
+            {step === 'owner' && (
+              <form onSubmit={handleOwnerNext} className={styles.form}>
+                <h2 className={styles.stepTitle}>About You</h2>
                 <div className={styles.field}>
                   <label className={styles.label}>Your Name</label>
-                  <input className={styles.input} value={form.ownerName} onChange={set('ownerName')} placeholder="Jane Smith" required />
+                  <input
+                    className={styles.input}
+                    type="text"
+                    value={ownerName}
+                    onChange={e => setOwnerName(e.target.value)}
+                    placeholder="Jane Smith"
+                    required
+                  />
                 </div>
                 <div className={styles.field}>
                   <label className={styles.label}>Email Address</label>
-                  <input className={styles.input} type="email" value={form.ownerEmail} onChange={set('ownerEmail')} placeholder="jane@example.com" required />
+                  <input
+                    className={styles.input}
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="jane@example.com"
+                    required
+                  />
                 </div>
-                <div className={styles.field}>
-                  <label className={styles.label}>Event Date</label>
-                  <input className={styles.input} type="date" value={form.eventDate} onChange={set('eventDate')} required />
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.label}>Event Location (City, State)</label>
-                  <input className={styles.input} value={form.eventLocation} onChange={set('eventLocation')} placeholder="New York, NY" required />
-                </div>
-                <div className={styles.actions}>
-                  <div />
-                  <button type="button" className={styles.nextBtn} onClick={next}>Next →</button>
-                </div>
-              </div>
+                <button className={styles.nextBtn} type="submit">Next: Your Dog →</button>
+              </form>
             )}
 
-            {step === 2 && (
-              <div className={styles.stepContent}>
-                <h2 className={styles.stepTitle}>Tell Us About Your Dog</h2>
+            {step === 'dog' && (
+              <form onSubmit={handleDogNext} className={styles.form}>
+                <h2 className={styles.stepTitle}>About Your Dog</h2>
                 <div className={styles.field}>
                   <label className={styles.label}>Dog's Name</label>
-                  <input className={styles.input} value={form.dogName} onChange={set('dogName')} placeholder="Max" required />
+                  <input
+                    className={styles.input}
+                    type="text"
+                    value={dogName}
+                    onChange={e => setDogName(e.target.value)}
+                    placeholder="Max"
+                    required
+                  />
                 </div>
                 <div className={styles.field}>
                   <label className={styles.label}>Breed</label>
-                  <input className={styles.input} value={form.dogBreed} onChange={set('dogBreed')} placeholder="Golden Retriever" required />
+                  <input
+                    className={styles.input}
+                    type="text"
+                    value={breed}
+                    onChange={e => setBreed(e.target.value)}
+                    placeholder="Golden Retriever"
+                    required
+                  />
                 </div>
                 <div className={styles.field}>
-                  <label className={styles.label}>Size</label>
-                  <select className={styles.input} value={form.dogSize} onChange={set('dogSize')} required>
-                    <option value="">Select size…</option>
-                    <option value="small">Small (under 20 lbs)</option>
-                    <option value="medium">Medium (20–50 lbs)</option>
-                    <option value="large">Large (50–90 lbs)</option>
-                    <option value="xlarge">Extra Large (90+ lbs)</option>
-                  </select>
+                  <label className={styles.label}>Event Date</label>
+                  <input
+                    className={styles.input}
+                    type="date"
+                    value={eventDate}
+                    onChange={e => setEventDate(e.target.value)}
+                    required
+                  />
                 </div>
-                <div className={styles.field}>
-                  <label className={styles.label}>Additional Notes</label>
-                  <textarea className={styles.input} value={form.notes} onChange={set('notes')} placeholder="Any special needs, temperament info, etc." rows={3} />
+                <div className={styles.btnRow}>
+                  <button type="button" className={styles.backBtn} onClick={() => setStep('owner')}>← Back</button>
+                  <button className={styles.nextBtn} type="submit">Next: Package →</button>
                 </div>
-                <div className={styles.actions}>
-                  <button type="button" className={styles.backBtn} onClick={back}>← Back</button>
-                  <button type="button" className={styles.nextBtn} onClick={next}>Next →</button>
-                </div>
-              </div>
+              </form>
             )}
 
-            {step === 3 && (
-              <div className={styles.stepContent}>
-                <h2 className={styles.stepTitle}>Choose Your Package</h2>
-                <div className={styles.packages}>
+            {step === 'package' && (
+              <form onSubmit={handlePackageNext} className={styles.form}>
+                <h2 className={styles.stepTitle}>Choose a Package</h2>
+                <div className={styles.packageGrid}>
                   {PACKAGES.map(pkg => (
-                    <label key={pkg.id} className={`${styles.pkgCard} ${form.packageId === pkg.id ? styles.pkgSelected : ''}`}>
-                      <input
-                        type="radio"
-                        name="packageId"
-                        value={pkg.id}
-                        checked={form.packageId === pkg.id}
-                        onChange={set('packageId')}
-                        className={styles.radioHidden}
-                        required
-                      />
-                      <div className={styles.pkgEmoji}>{pkg.emoji}</div>
-                      <div>
-                        <p className={styles.pkgName}>{pkg.name}</p>
-                        <p className={styles.pkgPrice}>{pkg.price}</p>
-                        <p className={styles.pkgDesc}>{pkg.desc}</p>
-                      </div>
-                    </label>
+                    <div
+                      key={pkg.id}
+                      className={`${styles.packageCard} ${selectedPackage === pkg.id ? styles.packageSelected : ''}`}
+                      onClick={() => setSelectedPackage(pkg.id)}
+                    >
+                      <span className={styles.packageEmoji}>{pkg.emoji}</span>
+                      <h3 className={styles.packageName}>{pkg.name}</h3>
+                      <p className={styles.packagePrice}>{pkg.price}</p>
+                      {pkg.tag && <span className={styles.packageTag}>{pkg.tag}</span>}
+                    </div>
                   ))}
                 </div>
-                <div className={styles.actions}>
-                  <button type="button" className={styles.backBtn} onClick={back}>← Back</button>
-                  <button type="submit" className={styles.nextBtn} disabled={loading}>
-                    {loading ? 'Booking…' : 'Confirm Booking 🎉'}
-                  </button>
+                <div className={styles.btnRow}>
+                  <button type="button" className={styles.backBtn} onClick={() => setStep('dog')}>← Back</button>
+                  <button className={styles.nextBtn} type="submit">Next: Confirm →</button>
                 </div>
-              </div>
+              </form>
             )}
-          </form>
+
+            {step === 'confirm' && (
+              <form onSubmit={handleConfirm} className={styles.form}>
+                <h2 className={styles.stepTitle}>Confirm Your Booking</h2>
+                <div className={styles.summary}>
+                  <div className={styles.summaryRow}><span>Owner</span><strong>{ownerName}</strong></div>
+                  <div className={styles.summaryRow}><span>Email</span><strong>{email}</strong></div>
+                  <div className={styles.summaryRow}><span>Dog</span><strong>{dogName} ({breed})</strong></div>
+                  <div className={styles.summaryRow}><span>Event Date</span><strong>{eventDate}</strong></div>
+                  <div className={styles.summaryRow}>
+                    <span>Package</span>
+                    <strong>{PACKAGES.find(p => p.id === selectedPackage)?.name}</strong>
+                  </div>
+                  <div className={styles.summaryRow}>
+                    <span>Price</span>
+                    <strong>{PACKAGES.find(p => p.id === selectedPackage)?.price}</strong>
+                  </div>
+                </div>
+                <div className={styles.btnRow}>
+                  <button type="button" className={styles.backBtn} onClick={() => setStep('package')}>← Back</button>
+                  <button className={styles.nextBtn} type="submit">Confirm Booking 🎉</button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </PageLayout>

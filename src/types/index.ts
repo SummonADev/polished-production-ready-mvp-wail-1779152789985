@@ -1,23 +1,30 @@
-export interface Lead {
+export type Lead = {
   id: string;
-  name: string;
   email: string;
+  name: string;
   source: string;
-  role?: string;
   createdAt: string;
-}
+};
 
-export interface Package {
+export type BookingSubmission = {
   id: string;
-  name: string;
-  price: number;
-  description: string;
-  features: string[];
-  popular?: boolean;
-}
+  ownerName: string;
+  email: string;
+  dogName: string;
+  breed: string;
+  packageId: string;
+  eventDate: string;
+  createdAt: string;
+};
 
-export interface AppEvent {
-  name: string;
+export type AnalyticsEvent = {
+  id: string;
+  event: string;
   timestamp: string;
-  meta?: Record<string, unknown>;
-}
+};
+
+export type AppState = {
+  leads: Lead[];
+  bookings: BookingSubmission[];
+  events: AnalyticsEvent[];
+};
