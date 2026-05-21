@@ -1,87 +1,86 @@
-import { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { loadState, saveState } from './storage';
-import type { Lead, Booking, AnalyticsEvent } from '@/types';
+import { createContext, useContext, useState, ReactNode } from 'react';
+import { loadFromStorage, saveToStorage } from '@/lib/storage';
 
-const STORAGE_KEY = 'bark-and-bow-state';
+export interface Booking {
+  id: string;
+  name: string;
+  email: string;
+  dogName: string;
+  dogBreed: string;
+  dogSize: string;
+  packageId: string;
+  eventDate: string;
+  eventLocation: string;
+  createdAt: string;
+}
 
-type State = {
-  leads: Lead[];
+export interface Lead {
+  email: string;
+  name: string;
+  source: string;
+}
+
+interface AppState {
   bookings: Booking[];
-  analytics: AnalyticsEvent[];
-};
+  leads: Lead[];
+  events: string[];
+}
 
-type AppContextType = {
-  state: State;
-  addLead: (lead: Omit<Lead, 'id' | 'createdAt'>) => void;
-  addBooking: (booking: Omit<Booking, 'id' | 'createdAt'>) => void;
-  track: (event: string, data?: Record<string, unknown>) => void;
-};
-
-const defaultState: State = { leads: [], bookings: [], analytics: [] };
-
-type Action =
-  | { type: 'ADD_LEAD'; payload: Lead }
-  | { type: 'ADD_BOOKING'; payload: Booking }
-  | { type: 'TRACK'; payload: AnalyticsEvent };
-
-function reducer(state: State, action: Action): State {
-  switch (action.type) {
-    case 'ADD_LEAD':
-      return { ...state, leads: [...state.leads, action.payload] };
-    case 'ADD_BOOKING':
-      return { ...state, bookings: [...state.bookings, action.payload] };
-    case 'TRACK':
-      return { ...state, analytics: [...state.analytics, action.payload] };
-    default:
-      return state;
-  }
+interface AppContextType {
+  bookings: Booking[];
+  leads: Lead[];
+  addBooking: (b: Omit<Booking, 'id' | 'createdAt'>) => void;
+  addLead: (l: Lead) => void;
+  track: (event: string) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(
-    reducer,
-    defaultState,
-    () => loadState<State>(STORAGE_KEY, defaultState)
-  );
+  const [state, setState] = useState<AppState>(() => ({
+    bookings: loadFromStorage<Booking[]>('bookings', []),
+    leads: loadFromStorage<Lead[]>('leads', []),
+    events: loadFromStorage<string[]>('events', []),
+  }));
 
-  useEffect(() => {
-    saveState(STORAGE_KEY, state);
-  }, [state]);
-
-  const addLead = (lead: Omit<Lead, 'id' | 'createdAt'>) => {
-    dispatch({
-      type: 'ADD_LEAD',
-      payload: { ...lead, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
+  const addBooking = (b: Omit<Booking, 'id' | 'createdAt'>) => {
+    const newBooking: Booking = {
+      ...b,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+    };
+    setState(prev => {
+      const updated = { ...prev, bookings: [...prev.bookings, newBooking] };
+      saveToStorage('bookings', updated.bookings);
+      return updated;
     });
   };
 
-  const addBooking = (booking: Omit<Booking, 'id' | 'createdAt'>) => {
-    dispatch({
-      type: 'ADD_BOOKING',
-      payload: { ...booking, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
+  const addLead = (l: Lead) => {
+    setState(prev => {
+      const updated = { ...prev, leads: [...prev.leads, l] };
+      saveToStorage('leads', updated.leads);
+      return updated;
     });
   };
 
-  const track = (event: string, data?: Record<string, unknown>) => {
-    dispatch({
-      type: 'TRACK',
-      payload: { event, data, timestamp: new Date().toISOString() },
+  const track = (event: string) => {
+    setState(prev => {
+      const updated = { ...prev, events: [...prev.events, event] };
+      saveToStorage('events', updated.events);
+      return updated;
     });
   };
 
   return (
-    <AppContext.Provider value={{ state, addLead, addBooking, track }}>
+    <AppContext.Provider value={{ bookings: state.bookings, leads: state.leads, addBooking, addLead, track }}>
       {children}
     </AppContext.Provider>
   );
 }
 
-export function useApp(): AppContextType {
+export function useApp() {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error('useApp must be used within AppProvider');
   return ctx;
 }
-
-export default AppContext;

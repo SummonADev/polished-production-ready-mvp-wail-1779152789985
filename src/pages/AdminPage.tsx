@@ -1,112 +1,53 @@
 import { useApp } from '@/lib/AppContext';
+import type { Booking } from '@/lib/AppContext';
 import PageLayout from '@/components/shared/PageLayout';
 
 export default function AdminPage() {
-  const { state } = useApp();
+  const { bookings } = useApp();
 
   return (
     <PageLayout>
-      <div style={{ padding: '40px 0' }}>
+      <div style={{ padding: '40px 0', minHeight: '60vh' }}>
         <div className="container">
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 700, marginBottom: '32px' }}>
-            🔐 Admin Dashboard
-          </h1>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', marginBottom: '8px' }}>Admin Dashboard</h1>
+          <p style={{ color: 'var(--color-text-secondary)', marginBottom: '32px' }}>{bookings.length} booking(s) total</p>
 
-          <section style={{ marginBottom: '48px' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '16px' }}>
-              Bookings ({state.bookings.length})
-            </h2>
-            {state.bookings.length === 0 ? (
-              <p style={{ color: 'var(--color-text-muted)' }}>No bookings yet.</p>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-                  <thead>
-                    <tr style={{ background: 'var(--color-surface)', borderBottom: '2px solid var(--color-border)' }}>
-                      <th style={{ padding: '8px 12px', textAlign: 'left' }}>Name</th>
-                      <th style={{ padding: '8px 12px', textAlign: 'left' }}>Email</th>
-                      <th style={{ padding: '8px 12px', textAlign: 'left' }}>Dog</th>
-                      <th style={{ padding: '8px 12px', textAlign: 'left' }}>Package</th>
-                      <th style={{ padding: '8px 12px', textAlign: 'left' }}>Event Date</th>
-                      <th style={{ padding: '8px 12px', textAlign: 'left' }}>Location</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {state.bookings.map((b, i) => (
-                      <tr key={b.id ?? i} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                        <td style={{ padding: '8px 12px' }}>{b.name}</td>
-                        <td style={{ padding: '8px 12px' }}>{b.email}</td>
-                        <td style={{ padding: '8px 12px' }}>{b.dogName} ({b.dogBreed})</td>
-                        <td style={{ padding: '8px 12px' }}>{b.packageId}</td>
-                        <td style={{ padding: '8px 12px' }}>{b.eventDate}</td>
-                        <td style={{ padding: '8px 12px' }}>{b.eventLocation}</td>
-                      </tr>
+          {bookings.length === 0 ? (
+            <div style={{
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '12px',
+              padding: '40px',
+              textAlign: 'center',
+              color: 'var(--color-text-muted)'
+            }}>
+              No bookings yet. Once customers complete onboarding, they'll appear here.
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', background: 'var(--color-surface)', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                <thead>
+                  <tr style={{ background: 'var(--color-bg-secondary)', borderBottom: '2px solid var(--color-border)' }}>
+                    {['Name', 'Email', 'Dog', 'Package', 'Date', 'Location'].map(h => (
+                      <th key={h} style={{ padding: '12px', textAlign: 'left', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)' }}>{h}</th>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-
-          <section style={{ marginBottom: '48px' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '16px' }}>
-              Leads ({state.leads.length})
-            </h2>
-            {state.leads.length === 0 ? (
-              <p style={{ color: 'var(--color-text-muted)' }}>No leads yet.</p>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-                  <thead>
-                    <tr style={{ background: 'var(--color-surface)', borderBottom: '2px solid var(--color-border)' }}>
-                      <th style={{ padding: '8px 12px', textAlign: 'left' }}>Name</th>
-                      <th style={{ padding: '8px 12px', textAlign: 'left' }}>Email</th>
-                      <th style={{ padding: '8px 12px', textAlign: 'left' }}>Source</th>
-                      <th style={{ padding: '8px 12px', textAlign: 'left' }}>Created At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bookings.map((b: Booking, i: number) => (
+                    <tr key={b.id} style={{ borderBottom: i < bookings.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
+                      <td style={{ padding: '8px 12px' }}>{b.name}</td>
+                      <td style={{ padding: '8px 12px' }}>{b.email}</td>
+                      <td style={{ padding: '8px 12px' }}>{b.dogName} ({b.dogBreed})</td>
+                      <td style={{ padding: '8px 12px' }}>{b.packageId}</td>
+                      <td style={{ padding: '8px 12px' }}>{b.eventDate}</td>
+                      <td style={{ padding: '8px 12px' }}>{b.eventLocation}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {state.leads.map((l, i) => (
-                      <tr key={l.id ?? i} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                        <td style={{ padding: '8px 12px' }}>{l.name || '—'}</td>
-                        <td style={{ padding: '8px 12px' }}>{l.email}</td>
-                        <td style={{ padding: '8px 12px' }}>{l.source}</td>
-                        <td style={{ padding: '8px 12px' }}>{l.createdAt ?? '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-
-          <section>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '16px' }}>
-              Analytics Events ({state.analytics.length})
-            </h2>
-            {state.analytics.length === 0 ? (
-              <p style={{ color: 'var(--color-text-muted)' }}>No events tracked yet.</p>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-                  <thead>
-                    <tr style={{ background: 'var(--color-surface)', borderBottom: '2px solid var(--color-border)' }}>
-                      <th style={{ padding: '8px 12px', textAlign: 'left' }}>Event</th>
-                      <th style={{ padding: '8px 12px', textAlign: 'left' }}>Timestamp</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {state.analytics.map((a, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                        <td style={{ padding: '8px 12px' }}>{a.event}</td>
-                        <td style={{ padding: '8px 12px' }}>{a.timestamp}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </PageLayout>
