@@ -5,47 +5,58 @@ import PageLayout from '@/components/shared/PageLayout';
 import styles from './DashboardPage.module.css';
 
 export default function DashboardPage() {
-  const { bookings } = useApp();
   const navigate = useNavigate();
+  const { bookings, track } = useApp();
+
+  const latestBooking: Booking | undefined = bookings[bookings.length - 1];
+
+  const handleTrack = () => {
+    track('dashboard_view');
+  };
 
   return (
     <PageLayout>
       <div className={styles.page}>
-        <div className="container">
-          <div className={styles.header}>
-            <h1 className={styles.title}>Your Dashboard</h1>
-            <p className={styles.sub}>Manage your Bark & Bow bookings and experiences.</p>
-            <button className={styles.ctaBtn} onClick={() => navigate('/onboarding')}>
-              + New Booking
-            </button>
-          </div>
-
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Your Bookings ({bookings.length})</h2>
-            {bookings.length === 0 ? (
-              <div className={styles.empty}>
-                <p>No bookings yet.</p>
-                <button onClick={() => navigate('/onboarding')}>Book Now</button>
-              </div>
-            ) : (
-              <div className={styles.bookingList}>
-                {bookings.map((b: Booking) => (
-                  <div key={b.id} className={styles.bookingCard}>
-                    <div className={styles.bookingInfo}>
-                      <span className={styles.dogName}>{b.dogName}</span>
-                      <span className={styles.breed}>{b.dogBreed}</span>
-                    </div>
-                    <div className={styles.bookingMeta}>
-                      <span className={styles.pkg}>{b.packageId}</span>
-                      <span className={styles.date}>{b.eventDate}</span>
-                      <span className={`${styles.status} ${styles[b.status]}`}>{b.status}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+        <div className={styles.header}>
+          <h1 className={styles.title}>Your Dog's Big Day Dashboard</h1>
+          <p className={styles.sub}>Track your booking, upcoming milestones, and everything your pup needs.</p>
+          <button className={styles.trackBtn} onClick={handleTrack} style={{ display: 'none' }} />
         </div>
+
+        {latestBooking ? (
+          <div className={styles.bookingCard}>
+            <div className={styles.bookingHeader}>
+              <div>
+                <h2 className={styles.dogName}>{latestBooking.dogName}</h2>
+                <p className={styles.bookingMeta}>{latestBooking.dogBreed} · {latestBooking.packageName}</p>
+              </div>
+              <span className={styles.status}>{latestBooking.status}</span>
+            </div>
+            <div className={styles.bookingDetails}>
+              <div className={styles.detail}>
+                <span className={styles.detailLabel}>Event Date</span>
+                <span className={styles.detailValue}>{latestBooking.eventDate}</span>
+              </div>
+              <div className={styles.detail}>
+                <span className={styles.detailLabel}>Location</span>
+                <span className={styles.detailValue}>{latestBooking.eventLocation}</span>
+              </div>
+              <div className={styles.detail}>
+                <span className={styles.detailLabel}>Owner</span>
+                <span className={styles.detailValue}>{latestBooking.ownerName}</span>
+              </div>
+              <div className={styles.detail}>
+                <span className={styles.detailLabel}>Contact</span>
+                <span className={styles.detailValue}>{latestBooking.email}</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.empty}>
+            <p>No bookings yet.</p>
+            <button className={styles.bookBtn} onClick={() => navigate('/onboarding')}>Book Your Dog Now</button>
+          </div>
+        )}
       </div>
     </PageLayout>
   );

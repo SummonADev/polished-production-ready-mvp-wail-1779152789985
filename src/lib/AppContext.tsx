@@ -1,85 +1,81 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import type { AppState, Lead, BookingData, AppEvent } from '@/types';
+import type { Booking, Lead, AppEvent, AddBookingInput } from '@/types/index';
+import { loadState, saveState } from '@/lib/storage';
+import { sampleBookings, sampleLeads } from '@/lib/sampleData';
 
-type AddLeadInput = Omit<Lead, 'id' | 'createdAt'>;
-type AddBookingInput = Omit<BookingData, 'id' | 'createdAt'>;
-
-export type AppContextType = {
+type AppState = {
+  bookings: Booking[];
   leads: Lead[];
-  bookings: BookingData[];
   events: AppEvent[];
-  addLead: (input: AddLeadInput) => void;
-  addBooking: (input: AddBookingInput) => void;
-  track: (name: string, data?: Record<string, unknown>) => void;
+};
+
+type AppContextType = {
+  bookings: Booking[];
+  leads: Lead[];
+  events: AppEvent[];
+  addBooking: (input: AddBookingInput) => Booking;
+  addLead: (input: { email: string; name: string; source: string }) => Lead;
+  track: (event: AppEvent) => void;
 };
 
 const AppContext = createContext<AppContextType | null>(null);
 
-function loadState(): AppState {
-  try {
-    const raw = localStorage.getItem('bark_and_bow_state');
-    if (raw) return JSON.parse(raw) as AppState;
-  } catch {
-    // ignore
-  }
-  return { leads: [], bookings: [], events: [] };
-}
+const STORAGE_KEY = 'bark_and_bow_state';
 
-function saveState(state: AppState) {
-  try {
-    localStorage.setItem('bark_and_bow_state', JSON.stringify(state));
-  } catch {
-    // ignore
-  }
+function getInitialState(): AppState {
+  const stored = loadState<AppState>(STORAGE_KEY);
+  if (stored) return stored;
+  return {
+    bookings: sampleBookings,
+    leads: sampleLeads,
+    events: [],
+  };
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AppState>(loadState);
+  const [state, setState] = useState<AppState>(getInitialState);
 
-  const updateState = useCallback((updater: (prev: AppState) => AppState) => {
-    setState(prev => {
-      const next = updater(prev);
-      saveState(next);
-      return next;
-    });
+  const persist = useCallback((next: AppState) => {
+    setState(next);
+    saveState(STORAGE_KEY, next);
   }, []);
 
-  const addLead = useCallback((input: AddLeadInput) => {
+  const addBooking = useCallback((input: AddBookingInput): Booking => {
+    const booking: Booking = {
+      ...input,
+      id: `booking_${Date.now()}`,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+    const next = { ...state, bookings: [...state.bookings, booking] };
+    persist(next);
+    return booking;
+  }, [state, persist]);
+
+  const addLead = useCallback((input: { email: string; name: string; source: string }): Lead => {
     const lead: Lead = {
       ...input,
-      id: crypto.randomUUID(),
+      id: `lead_${Date.now()}`,
       createdAt: new Date().toISOString(),
     };
-    updateState(prev => ({ ...prev, leads: [...prev.leads, lead] }));
-  }, [updateState]);
+    const next = { ...state, leads: [...state.leads, lead] };
+    persist(next);
+    return lead;
+  }, [state, persist]);
 
-  const addBooking = useCallback((input: AddBookingInput) => {
-    const booking: BookingData = {
-      ...input,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
-    updateState(prev => ({ ...prev, bookings: [...prev.bookings, booking] }));
-  }, [updateState]);
-
-  const track = useCallback((name: string, data?: Record<string, unknown>) => {
-    const event: AppEvent = {
-      id: crypto.randomUUID(),
-      name,
-      timestamp: new Date().toISOString(),
-      data,
-    };
-    updateState(prev => ({ ...prev, events: [...prev.events, event] }));
-  }, [updateState]);
+  const track = useCallback((event: AppEvent) => {
+    const next = { ...state, events: [...state.events, event] };
+    persist(next);
+  }, [state, persist]);
 
   return (
     <AppContext.Provider value={{
-      leads: state.leads,
       bookings: state.bookings,
+      leads: state.leads,
       events: state.events,
-      addLead,
       addBooking,
+      addLead,
       track,
     }}>
       {children}
