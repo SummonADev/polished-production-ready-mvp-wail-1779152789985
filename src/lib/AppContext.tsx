@@ -1,47 +1,28 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { loadFromStorage, saveToStorage } from '@/lib/storage';
+import type { Booking, Lead } from '@/types/index';
+import { sampleBookings, sampleLeads } from '@/lib/sampleData';
 
-export interface Booking {
-  id: string;
-  name: string;
-  email: string;
-  dogName: string;
-  dogBreed: string;
-  dogSize: string;
-  packageId: string;
-  eventDate: string;
-  eventLocation: string;
-  createdAt: string;
-}
-
-export interface Lead {
-  email: string;
-  name: string;
-  source: string;
-}
-
-interface AppState {
-  bookings: Booking[];
-  leads: Lead[];
-  events: string[];
-}
-
-interface AppContextType {
+type AppContextType = {
   bookings: Booking[];
   leads: Lead[];
   addBooking: (b: Omit<Booking, 'id' | 'createdAt'>) => void;
-  addLead: (l: Lead) => void;
+  addLead: (l: Omit<Lead, 'id' | 'createdAt'>) => void;
   track: (event: string) => void;
-}
+};
 
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AppState>(() => ({
-    bookings: loadFromStorage<Booking[]>('bookings', []),
-    leads: loadFromStorage<Lead[]>('leads', []),
-    events: loadFromStorage<string[]>('events', []),
-  }));
+  const [bookings, setBookings] = useState<Booking[]>(() =>
+    loadFromStorage<Booking[]>('bb_bookings', sampleBookings)
+  );
+  const [leads, setLeads] = useState<Lead[]>(() =>
+    loadFromStorage<Lead[]>('bb_leads', sampleLeads)
+  );
+
+  useEffect(() => { saveToStorage('bb_bookings', bookings); }, [bookings]);
+  useEffect(() => { saveToStorage('bb_leads', leads); }, [leads]);
 
   const addBooking = (b: Omit<Booking, 'id' | 'createdAt'>) => {
     const newBooking: Booking = {
@@ -49,31 +30,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
     };
-    setState(prev => {
-      const updated = { ...prev, bookings: [...prev.bookings, newBooking] };
-      saveToStorage('bookings', updated.bookings);
-      return updated;
-    });
+    setBookings(prev => [newBooking, ...prev]);
   };
 
-  const addLead = (l: Lead) => {
-    setState(prev => {
-      const updated = { ...prev, leads: [...prev.leads, l] };
-      saveToStorage('leads', updated.leads);
-      return updated;
-    });
+  const addLead = (l: Omit<Lead, 'id' | 'createdAt'>) => {
+    const newLead: Lead = {
+      ...l,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+    };
+    setLeads(prev => [newLead, ...prev]);
   };
 
   const track = (event: string) => {
-    setState(prev => {
-      const updated = { ...prev, events: [...prev.events, event] };
-      saveToStorage('events', updated.events);
-      return updated;
-    });
+    console.log('[track]', event);
   };
 
   return (
-    <AppContext.Provider value={{ bookings: state.bookings, leads: state.leads, addBooking, addLead, track }}>
+    <AppContext.Provider value={{ bookings, leads, addBooking, addLead, track }}>
       {children}
     </AppContext.Provider>
   );

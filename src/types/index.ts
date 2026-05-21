@@ -1,23 +1,26 @@
-export type Lead = {
+export type Package = {
   id: string;
-  email: string;
   name: string;
-  source: string;
-  createdAt: string;
+  price: number;
+  description: string;
 };
 
 export type Booking = {
   id: string;
   createdAt: string;
-  dogName?: string;
-  ownerName?: string;
-  packageName?: string;
-  eventDate?: string;
-  [key: string]: unknown;
+  ownerName: string;
+  email: string;
+  dogName: string;
+  breed: string;
+  packageId: string;
+  eventDate: string;
+  notes: string;
 };
 
-export type AnalyticsEvent = {
-  event: string;
-  data?: Record<string, unknown>;
-  timestamp: string;
+export type Lead = {
+  id: string;
+  createdAt: string;
+  email: string;
+  name: string;
+  source: string;
 };
