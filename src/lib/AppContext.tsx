@@ -1,65 +1,93 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { loadFromStorage, saveToStorage } from './storage';
-import type { AppState, Lead, BookingData } from '@/types';
-import { sampleBookings, sampleLeads } from './sampleData';
+import { createContext, useContext, useState, useCallback } from 'react';
+import type { ReactNode } from 'react';
+import type { AppState, Lead, BookingData, AppEvent } from '@/types';
 
-const STORAGE_KEY = 'bark-and-bow-state';
+type AddLeadInput = Omit<Lead, 'id' | 'createdAt'>;
+type AddBookingInput = Omit<BookingData, 'id' | 'createdAt'>;
 
-const defaultState: AppState = {
-  bookings: sampleBookings,
-  leads: sampleLeads,
-  events: [],
-};
-
-type AppContextType = {
-  state: AppState;
-  addLead: (lead: Omit<Lead, 'id' | 'createdAt'>) => void;
-  addBooking: (booking: Omit<BookingData, 'id' | 'createdAt'>) => void;
-  track: (event: string, props?: Record<string, unknown>) => void;
+export type AppContextType = {
+  leads: Lead[];
+  bookings: BookingData[];
+  events: AppEvent[];
+  addLead: (input: AddLeadInput) => void;
+  addBooking: (input: AddBookingInput) => void;
+  track: (name: string, data?: Record<string, unknown>) => void;
 };
 
 const AppContext = createContext<AppContextType | null>(null);
 
+function loadState(): AppState {
+  try {
+    const raw = localStorage.getItem('bark_and_bow_state');
+    if (raw) return JSON.parse(raw) as AppState;
+  } catch {
+    // ignore
+  }
+  return { leads: [], bookings: [], events: [] };
+}
+
+function saveState(state: AppState) {
+  try {
+    localStorage.setItem('bark_and_bow_state', JSON.stringify(state));
+  } catch {
+    // ignore
+  }
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AppState>(() => {
-    const stored = loadFromStorage<AppState>(STORAGE_KEY, defaultState);
-    return stored;
-  });
+  const [state, setState] = useState<AppState>(loadState);
 
-  useEffect(() => {
-    saveToStorage(STORAGE_KEY, state);
-  }, [state]);
+  const updateState = useCallback((updater: (prev: AppState) => AppState) => {
+    setState(prev => {
+      const next = updater(prev);
+      saveState(next);
+      return next;
+    });
+  }, []);
 
-  const addLead = (lead: Omit<Lead, 'id' | 'createdAt'>) => {
-    const newLead: Lead = {
-      ...lead,
+  const addLead = useCallback((input: AddLeadInput) => {
+    const lead: Lead = {
+      ...input,
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
     };
-    setState(prev => ({ ...prev, leads: [...prev.leads, newLead] }));
-  };
+    updateState(prev => ({ ...prev, leads: [...prev.leads, lead] }));
+  }, [updateState]);
 
-  const addBooking = (booking: Omit<BookingData, 'id' | 'createdAt'>) => {
-    const newBooking: BookingData = {
-      ...booking,
+  const addBooking = useCallback((input: AddBookingInput) => {
+    const booking: BookingData = {
+      ...input,
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
     };
-    setState(prev => ({ ...prev, bookings: [...prev.bookings, newBooking] }));
-  };
+    updateState(prev => ({ ...prev, bookings: [...prev.bookings, booking] }));
+  }, [updateState]);
 
-  const track = (event: string, props?: Record<string, unknown>) => {
-    console.log('[track]', event, props);
-  };
+  const track = useCallback((name: string, data?: Record<string, unknown>) => {
+    const event: AppEvent = {
+      id: crypto.randomUUID(),
+      name,
+      timestamp: new Date().toISOString(),
+      data,
+    };
+    updateState(prev => ({ ...prev, events: [...prev.events, event] }));
+  }, [updateState]);
 
   return (
-    <AppContext.Provider value={{ state, addLead, addBooking, track }}>
+    <AppContext.Provider value={{
+      leads: state.leads,
+      bookings: state.bookings,
+      events: state.events,
+      addLead,
+      addBooking,
+      track,
+    }}>
       {children}
     </AppContext.Provider>
   );
 }
 
-export function useApp() {
+export function useApp(): AppContextType {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error('useApp must be used within AppProvider');
   return ctx;

@@ -1,32 +1,32 @@
-export type BookingStatus = 'pending' | 'confirmed' | 'cancelled';
-
-export interface Booking {
-  id: string;
-  ownerName: string;
-  ownerEmail: string;
-  dogName: string;
-  dogBreed: string;
-  packageId: string;
-  eventDate: string;
-  status: BookingStatus;
-  createdAt: string;
-}
-
-export interface Lead {
+export type Lead = {
   id: string;
   email: string;
   name: string;
   source: string;
   createdAt: string;
-}
+};
 
-export interface Package {
+export type BookingData = {
+  id: string;
+  dogName: string;
+  breed: string;
+  ownerName: string;
+  ownerEmail: string;
+  eventDate: string;
+  packageName: string;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  createdAt: string;
+};
+
+export type AppEvent = {
   id: string;
   name: string;
-  price: string;
-  period: string;
-  emoji: string;
-  tag: string | null;
-  description: string;
-  features: string[];
-}
+  timestamp: string;
+  data?: Record<string, unknown>;
+};
+
+export type AppState = {
+  leads: Lead[];
+  bookings: BookingData[];
+  events: AppEvent[];
+};
