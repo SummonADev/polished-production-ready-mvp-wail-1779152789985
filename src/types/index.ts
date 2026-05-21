@@ -1,30 +1,29 @@
-export type Lead = {
-  id: string;
-  email: string;
+export interface Lead {
+  id?: string;
   name: string;
-  source: string;
-  createdAt: string;
-};
-
-export type BookingSubmission = {
-  id: string;
-  ownerName: string;
   email: string;
+  source: string;
+  createdAt?: string;
+}
+
+export interface BookingSubmission {
+  id?: string;
+  name: string;
+  email: string;
+  phone?: string;
   dogName: string;
-  breed: string;
+  dogBreed: string;
+  dogSize: string;
   packageId: string;
   eventDate: string;
-  createdAt: string;
-};
+  eventLocation: string;
+  notes?: string;
+  createdAt?: string;
+}
 
-export type AnalyticsEvent = {
-  id: string;
+export interface AnalyticsEvent {
+  id?: string;
   event: string;
   timestamp: string;
-};
-
-export type AppState = {
-  leads: Lead[];
-  bookings: BookingSubmission[];
-  events: AnalyticsEvent[];
-};
+  data?: Record<string, unknown>;
+}

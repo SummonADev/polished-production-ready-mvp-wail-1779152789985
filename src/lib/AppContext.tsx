@@ -1,55 +1,55 @@
-import { createContext, useContext, useReducer, ReactNode } from 'react';
-import { loadFromStorage, saveToStorage } from '@/lib/storage';
-import type { AppState, Lead, BookingSubmission, AnalyticsEvent } from '@/types';
+import { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react';
+import type { Lead, BookingSubmission, AnalyticsEvent } from '@/types';
+import { loadState, saveState } from '@/lib/storage';
 
-export type AppContextType = {
-  state: AppState;
-  addLead: (lead: Omit<Lead, 'id' | 'createdAt'>) => void;
-  submitOnboarding: (submission: Omit<BookingSubmission, 'id' | 'createdAt'>) => void;
-  track: (event: string, data?: Record<string, unknown>) => void;
+type State = {
+  leads: Lead[];
+  bookings: BookingSubmission[];
+  analytics: AnalyticsEvent[];
 };
 
 type Action =
   | { type: 'ADD_LEAD'; payload: Lead }
   | { type: 'ADD_BOOKING'; payload: BookingSubmission }
-  | { type: 'ADD_EVENT'; payload: AnalyticsEvent };
+  | { type: 'ADD_ANALYTICS'; payload: AnalyticsEvent };
 
-function reducer(state: AppState, action: Action): AppState {
+type AppContextType = {
+  state: State;
+  addLead: (lead: Omit<Lead, 'id' | 'createdAt'>) => void;
+  addBooking: (booking: Omit<BookingSubmission, 'id' | 'createdAt'>) => void;
+  track: (event: string, data?: Record<string, unknown>) => void;
+};
+
+const AppContext = createContext<AppContextType | null>(null);
+
+const initialState: State = {
+  leads: [],
+  bookings: [],
+  analytics: [],
+};
+
+function reducer(state: State, action: Action): State {
   switch (action.type) {
-    case 'ADD_LEAD': {
-      const next = { ...state, leads: [...state.leads, action.payload] };
-      saveToStorage('app_state', next);
-      return next;
-    }
-    case 'ADD_BOOKING': {
-      const next = { ...state, bookings: [...state.bookings, action.payload] };
-      saveToStorage('app_state', next);
-      return next;
-    }
-    case 'ADD_EVENT': {
-      const next = { ...state, events: [...state.events, action.payload] };
-      saveToStorage('app_state', next);
-      return next;
-    }
+    case 'ADD_LEAD':
+      return { ...state, leads: [...state.leads, action.payload] };
+    case 'ADD_BOOKING':
+      return { ...state, bookings: [...state.bookings, action.payload] };
+    case 'ADD_ANALYTICS':
+      return { ...state, analytics: [...state.analytics, action.payload] };
     default:
       return state;
   }
 }
 
-const defaultState: AppState = {
-  leads: [],
-  bookings: [],
-  events: [],
-};
-
-const AppContext = createContext<AppContextType | null>(null);
-
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(
-    reducer,
-    defaultState,
-    (init) => ({ ...init, ...loadFromStorage<Partial<AppState>>('app_state') })
-  );
+  const [state, dispatch] = useReducer(reducer, initialState, () => {
+    const saved = loadState();
+    return saved ?? initialState;
+  });
+
+  useEffect(() => {
+    saveState(state);
+  }, [state]);
 
   const addLead = (lead: Omit<Lead, 'id' | 'createdAt'>) => {
     dispatch({
@@ -58,22 +58,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const submitOnboarding = (submission: Omit<BookingSubmission, 'id' | 'createdAt'>) => {
+  const addBooking = (booking: Omit<BookingSubmission, 'id' | 'createdAt'>) => {
     dispatch({
       type: 'ADD_BOOKING',
-      payload: { ...submission, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
+      payload: { ...booking, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
     });
   };
 
   const track = (event: string, data?: Record<string, unknown>) => {
     dispatch({
-      type: 'ADD_EVENT',
+      type: 'ADD_ANALYTICS',
       payload: { event, data, timestamp: new Date().toISOString() },
     });
   };
 
   return (
-    <AppContext.Provider value={{ state, addLead, submitOnboarding, track }}>
+    <AppContext.Provider value={{ state, addLead, addBooking, track }}>
       {children}
     </AppContext.Provider>
   );
