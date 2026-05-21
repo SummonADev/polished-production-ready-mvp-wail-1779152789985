@@ -1,13 +1,4 @@
-export type Package = {
-  id: string;
-  name: string;
-  price: string;
-  period: string;
-  emoji: string;
-  tag: string | null;
-  desc: string;
-  features: string[];
-};
+import type { Package } from '@/types/index';
 
 export const PACKAGES: Package[] = [
   {
@@ -17,7 +8,7 @@ export const PACKAGES: Package[] = [
     period: 'per event',
     emoji: '🎩',
     tag: null,
-    desc: 'Perfect for a single dog with a supporting role.',
+    description: 'Perfect for a single dog with a supporting role.',
     features: [
       'Custom-fitted tuxedo or dress',
       'Pre-event grooming session',
@@ -33,7 +24,7 @@ export const PACKAGES: Package[] = [
     period: 'per event',
     emoji: '🌟',
     tag: 'Most Popular',
-    desc: 'Our flagship full-service experience.',
+    description: 'Our flagship full-service experience.',
     features: [
       'Everything in The Gentleman',
       'Handler for full event (8 hours)',
@@ -50,7 +41,7 @@ export const PACKAGES: Package[] = [
     period: 'per event',
     emoji: '👑',
     tag: null,
-    desc: 'For multiple dogs or extra-special occasions.',
+    description: 'For multiple dogs or extra-special occasions.',
     features: [
       'Everything in The Grand Marshal',
       'Up to 3 dogs',
@@ -61,5 +52,3 @@ export const PACKAGES: Package[] = [
     ],
   },
 ];
-
-export const packages = PACKAGES;

@@ -1,26 +1,32 @@
-export type Package = {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-};
+export type BookingStatus = 'pending' | 'confirmed' | 'cancelled';
 
-export type Booking = {
+export interface Booking {
   id: string;
-  createdAt: string;
   ownerName: string;
-  email: string;
+  ownerEmail: string;
   dogName: string;
-  breed: string;
+  dogBreed: string;
   packageId: string;
   eventDate: string;
-  notes: string;
-};
-
-export type Lead = {
-  id: string;
+  status: BookingStatus;
   createdAt: string;
+}
+
+export interface Lead {
+  id: string;
   email: string;
   name: string;
   source: string;
-};
+  createdAt: string;
+}
+
+export interface Package {
+  id: string;
+  name: string;
+  price: string;
+  period: string;
+  emoji: string;
+  tag: string | null;
+  description: string;
+  features: string[];
+}

@@ -1,47 +1,50 @@
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/lib/AppContext';
-import type { Booking } from '@/lib/AppContext';
+import type { Booking } from '@/types/index';
 import PageLayout from '@/components/shared/PageLayout';
 import styles from './DashboardPage.module.css';
 
 export default function DashboardPage() {
   const { bookings } = useApp();
-  const latestBooking: Booking | null = bookings.length > 0 ? bookings[bookings.length - 1] : null;
+  const navigate = useNavigate();
 
   return (
     <PageLayout>
       <div className={styles.page}>
         <div className="container">
           <div className={styles.header}>
-            <h1 className={styles.title}>
-              {latestBooking ? `Welcome back, ${latestBooking.name.split(' ')[0]}!` : 'Your Dashboard'}
-            </h1>
-            <p className={styles.sub}>Your Bark & Bow experience at a glance.</p>
+            <h1 className={styles.title}>Your Dashboard</h1>
+            <p className={styles.sub}>Manage your Bark & Bow bookings and experiences.</p>
+            <button className={styles.ctaBtn} onClick={() => navigate('/onboarding')}>
+              + New Booking
+            </button>
           </div>
 
-          {latestBooking ? (
-            <div className={styles.grid}>
-              <div className={styles.card}>
-                <h2 className={styles.cardTitle}>🐾 Your Dog</h2>
-                <dl className={styles.dl}>
-                  <dt>Name</dt><dd>{latestBooking.dogName}</dd>
-                  <dt>Breed</dt><dd>{latestBooking.dogBreed}</dd>
-                  <dt>Size</dt><dd>{latestBooking.dogSize}</dd>
-                </dl>
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>Your Bookings ({bookings.length})</h2>
+            {bookings.length === 0 ? (
+              <div className={styles.empty}>
+                <p>No bookings yet.</p>
+                <button onClick={() => navigate('/onboarding')}>Book Now</button>
               </div>
-              <div className={styles.card}>
-                <h2 className={styles.cardTitle}>📅 Your Booking</h2>
-                <dl className={styles.dl}>
-                  <dt>Date</dt><dd>{latestBooking.eventDate}</dd>
-                  <dt>Location</dt><dd>{latestBooking.eventLocation}</dd>
-                  <dt>Package</dt><dd>{latestBooking.packageId}</dd>
-                </dl>
+            ) : (
+              <div className={styles.bookingList}>
+                {bookings.map((b: Booking) => (
+                  <div key={b.id} className={styles.bookingCard}>
+                    <div className={styles.bookingInfo}>
+                      <span className={styles.dogName}>{b.dogName}</span>
+                      <span className={styles.breed}>{b.dogBreed}</span>
+                    </div>
+                    <div className={styles.bookingMeta}>
+                      <span className={styles.pkg}>{b.packageId}</span>
+                      <span className={styles.date}>{b.eventDate}</span>
+                      <span className={`${styles.status} ${styles[b.status]}`}>{b.status}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          ) : (
-            <div className={styles.empty}>
-              <p>No bookings yet. <a href="/onboarding">Book your dog's experience →</a></p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </PageLayout>
