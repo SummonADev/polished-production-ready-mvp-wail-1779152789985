@@ -1,17 +1,17 @@
-export function loadFromStorage<T>(key: string, fallback?: T): T {
+export function loadState<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
-    if (!raw) return fallback as T;
+    if (raw === null) return fallback;
     return JSON.parse(raw) as T;
   } catch {
-    return fallback as T;
+    return fallback;
   }
 }
 
-export function saveToStorage<T>(key: string, value: T): void {
+export function saveState<T>(key: string, value: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // ignore
+    // ignore write errors
   }
 }
