@@ -1,32 +1,28 @@
-import { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react';
-import type { Lead, BookingSubmission, AnalyticsEvent } from '@/types';
-import { loadState, saveState } from '@/lib/storage';
+import { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import { loadState, saveState } from './storage';
+import type { Lead, Booking, AnalyticsEvent } from '@/types';
+
+const STORAGE_KEY = 'bark-and-bow-state';
 
 type State = {
   leads: Lead[];
-  bookings: BookingSubmission[];
+  bookings: Booking[];
   analytics: AnalyticsEvent[];
 };
-
-type Action =
-  | { type: 'ADD_LEAD'; payload: Lead }
-  | { type: 'ADD_BOOKING'; payload: BookingSubmission }
-  | { type: 'ADD_ANALYTICS'; payload: AnalyticsEvent };
 
 type AppContextType = {
   state: State;
   addLead: (lead: Omit<Lead, 'id' | 'createdAt'>) => void;
-  addBooking: (booking: Omit<BookingSubmission, 'id' | 'createdAt'>) => void;
+  addBooking: (booking: Omit<Booking, 'id' | 'createdAt'>) => void;
   track: (event: string, data?: Record<string, unknown>) => void;
 };
 
-const AppContext = createContext<AppContextType | null>(null);
+const defaultState: State = { leads: [], bookings: [], analytics: [] };
 
-const initialState: State = {
-  leads: [],
-  bookings: [],
-  analytics: [],
-};
+type Action =
+  | { type: 'ADD_LEAD'; payload: Lead }
+  | { type: 'ADD_BOOKING'; payload: Booking }
+  | { type: 'TRACK'; payload: AnalyticsEvent };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -34,21 +30,24 @@ function reducer(state: State, action: Action): State {
       return { ...state, leads: [...state.leads, action.payload] };
     case 'ADD_BOOKING':
       return { ...state, bookings: [...state.bookings, action.payload] };
-    case 'ADD_ANALYTICS':
+    case 'TRACK':
       return { ...state, analytics: [...state.analytics, action.payload] };
     default:
       return state;
   }
 }
 
+const AppContext = createContext<AppContextType | null>(null);
+
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, initialState, () => {
-    const saved = loadState();
-    return saved ?? initialState;
-  });
+  const [state, dispatch] = useReducer(
+    reducer,
+    defaultState,
+    () => loadState<State>(STORAGE_KEY, defaultState)
+  );
 
   useEffect(() => {
-    saveState(state);
+    saveState(STORAGE_KEY, state);
   }, [state]);
 
   const addLead = (lead: Omit<Lead, 'id' | 'createdAt'>) => {
@@ -58,7 +57,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const addBooking = (booking: Omit<BookingSubmission, 'id' | 'createdAt'>) => {
+  const addBooking = (booking: Omit<Booking, 'id' | 'createdAt'>) => {
     dispatch({
       type: 'ADD_BOOKING',
       payload: { ...booking, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
@@ -67,7 +66,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const track = (event: string, data?: Record<string, unknown>) => {
     dispatch({
-      type: 'ADD_ANALYTICS',
+      type: 'TRACK',
       payload: { event, data, timestamp: new Date().toISOString() },
     });
   };
@@ -84,3 +83,5 @@ export function useApp(): AppContextType {
   if (!ctx) throw new Error('useApp must be used within AppProvider');
   return ctx;
 }
+
+export default AppContext;
