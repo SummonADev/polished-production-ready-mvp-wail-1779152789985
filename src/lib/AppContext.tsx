@@ -1,73 +1,59 @@
-import { createContext, useContext, useState, useCallback } from 'react';
-import type { ReactNode } from 'react';
-import type { Booking, Lead } from '@/types/index';
-import { sampleBookings, sampleLeads } from '@/lib/sampleData';
-import { loadFromStorage, saveToStorage } from '@/lib/storage';
-
-interface AppState {
-  bookings: Booking[];
-  leads: Lead[];
-  events: string[];
-}
-
-interface AppContextValue extends AppState {
-  addBooking: (booking: Omit<Booking, 'id' | 'createdAt'>) => void;
-  addLead: (lead: Omit<Lead, 'id' | 'createdAt'>) => void;
-  track: (event: string) => void;
-}
-
-const AppContext = createContext<AppContextValue | null>(null);
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { loadFromStorage, saveToStorage } from './storage';
+import type { AppState, Lead, BookingData } from '@/types';
+import { sampleBookings, sampleLeads } from './sampleData';
 
 const STORAGE_KEY = 'bark-and-bow-state';
 
+const defaultState: AppState = {
+  bookings: sampleBookings,
+  leads: sampleLeads,
+  events: [],
+};
+
+type AppContextType = {
+  state: AppState;
+  addLead: (lead: Omit<Lead, 'id' | 'createdAt'>) => void;
+  addBooking: (booking: Omit<BookingData, 'id' | 'createdAt'>) => void;
+  track: (event: string, props?: Record<string, unknown>) => void;
+};
+
+const AppContext = createContext<AppContextType | null>(null);
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(() => {
-    const stored = loadFromStorage<AppState>(STORAGE_KEY);
-    return stored ?? {
-      bookings: sampleBookings,
-      leads: sampleLeads,
-      events: [],
-    };
+    const stored = loadFromStorage<AppState>(STORAGE_KEY, defaultState);
+    return stored;
   });
 
-  const addBooking = useCallback((booking: Omit<Booking, 'id' | 'createdAt'>) => {
-    setState(prev => {
-      const next = {
-        ...prev,
-        bookings: [
-          ...prev.bookings,
-          { ...booking, id: `b${Date.now()}`, createdAt: new Date().toISOString() },
-        ],
-      };
-      saveToStorage(STORAGE_KEY, next);
-      return next;
-    });
-  }, []);
+  useEffect(() => {
+    saveToStorage(STORAGE_KEY, state);
+  }, [state]);
 
-  const addLead = useCallback((lead: Omit<Lead, 'id' | 'createdAt'>) => {
-    setState(prev => {
-      const next = {
-        ...prev,
-        leads: [
-          ...prev.leads,
-          { ...lead, id: `l${Date.now()}`, createdAt: new Date().toISOString() },
-        ],
-      };
-      saveToStorage(STORAGE_KEY, next);
-      return next;
-    });
-  }, []);
+  const addLead = (lead: Omit<Lead, 'id' | 'createdAt'>) => {
+    const newLead: Lead = {
+      ...lead,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+    };
+    setState(prev => ({ ...prev, leads: [...prev.leads, newLead] }));
+  };
 
-  const track = useCallback((event: string) => {
-    setState(prev => {
-      const next = { ...prev, events: [...prev.events, event] };
-      saveToStorage(STORAGE_KEY, next);
-      return next;
-    });
-  }, []);
+  const addBooking = (booking: Omit<BookingData, 'id' | 'createdAt'>) => {
+    const newBooking: BookingData = {
+      ...booking,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+    };
+    setState(prev => ({ ...prev, bookings: [...prev.bookings, newBooking] }));
+  };
+
+  const track = (event: string, props?: Record<string, unknown>) => {
+    console.log('[track]', event, props);
+  };
 
   return (
-    <AppContext.Provider value={{ ...state, addBooking, addLead, track }}>
+    <AppContext.Provider value={{ state, addLead, addBooking, track }}>
       {children}
     </AppContext.Provider>
   );
